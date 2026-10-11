@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Round Lists — GradeUp{% endblock %}
+{% block content %}
+
+<div class="container">
+
+    <div class="page-title">
+        <div class="step-badge">5</div>
+        <div>
+            <h2>Round Lists</h2>
+            <p>Subject-wise lists of students who must appear for re-examination</p>
+        </div>
+    </div>
+
+    {% if round_lists %}
+        {% for sub, rows in round_lists.items() %}
+        <div class="table-wrap">
+            <div class="table-header">
+                <h3>📋 {{ sub }}</h3>
+                <span class="count-pill">{{ rows|length }} students</span>
+            </div>
+            <table>
+                <thead>
+                    <tr><th>#</th><th>S.No</th><th>Reg No</th><th>Marks Obtained</th></tr>
+                </thead>
+                <tbody>
+                    {% for r in rows %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ r.get('S.No', '') }}</td>
+                        <td><strong>{{ r['Reg No'] }}</strong></td>
+                        <td><span class="badge badge-fail">{{ r['Marks_Obtained'] }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="card" style="text-align: center; padding: 60px 20px;">
+            <div style="font-size: 60px; margin-bottom: 12px;">🎉</div>
+            <h3 style="color: #16a34a; margin-bottom: 6px;">No Round Lists Needed!</h3>
+            <p style="color: #6b7280;">All students have passed — no re-examination required.</p>
+        </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}

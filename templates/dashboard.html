@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — GradeUp{% endblock %}
+{% block content %}
+
+<div class="container">
+
+    <div class="page-title">
+        <div class="step-badge">2</div>
+        <div>
+            <h2>Welcome, {{ current_user.full_name }}! 👋</h2>
+            <p>Here's an overview of your analyzed results</p>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-label">Total Students</div>
+            <div class="stat-value">{{ stats.total_students }}</div>
+        </div>
+
+        <div class="stat-card pass">
+            <div class="stat-icon">✅</div>
+            <div class="stat-label">Passed</div>
+            <div class="stat-value">{{ stats.passed_students }}</div>
+        </div>
+
+        <div class="stat-card fail">
+            <div class="stat-icon">❌</div>
+            <div class="stat-label">Failed</div>
+            <div class="stat-value">{{ stats.failed_students }}</div>
+        </div>
+
+        <div class="stat-card rate">
+            <div class="stat-icon">📈</div>
+            <div class="stat-label">Pass Percentage</div>
+            <div class="stat-value">{{ stats.pass_percentage }}<small>%</small></div>
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <div class="table-header">
+            <h3>📚 Subject-wise Failure Count</h3>
+            <span class="count-pill">{{ stats.subject_fail_counts|length }} subjects</span>
+        </div>
+        <table>
+            <thead>
+                <tr><th>Subject</th><th>Failures</th><th>Average</th><th>Max</th><th>Severity</th></tr>
+            </thead>
+            <tbody>
+                {% for sub, cnt in stats.subject_fail_counts.items() %}
+                <tr>
+                    <td><strong>{{ sub }}</strong></td>
+                    <td>{{ cnt }}</td>
+                    <td>{{ stats.subject_avg[sub] }}</td>
+                    <td>{{ stats.subject_max[sub] }}</td>
+                    <td>
+                        {% if cnt == 0 %}
+                            <span class="badge badge-pass">All Clear</span>
+                        {% elif cnt <= 3 %}
+                            <span class="badge badge-low">Low</span>
+                        {% elif cnt <= 8 %}
+                            <span class="badge badge-medium">Medium</span>
+                        {% else %}
+                            <span class="badge badge-high">High</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px;">
+        <a href="{{ url_for('failures') }}" class="btn btn-outline">❌ View Failures</a>
+        <a href="{{ url_for('round_lists') }}" class="btn btn-outline">📋 Round Lists</a>
+        <a href="{{ url_for('download_pdf') }}" class="btn btn-success">📄 Download PDF Report</a>
+        <a href="{{ url_for('download_student_correction_pdf') }}" class="btn btn-success">📝 Download Student Correction PDF</a>
+        <a href="{{ url_for('download_report') }}" class="btn btn-outline">⬇ Download Excel</a>
+    </div>
+
+</div>
+
+{% endblock %}

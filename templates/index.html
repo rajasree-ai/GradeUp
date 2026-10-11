@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Upload — GradeUp{% endblock %}
+{% block content %}
+
+<div class="container">
+
+    <div class="page-title">
+        <div class="step-badge">1</div>
+        <div>
+            <h2>Upload Student Marks</h2>
+            <p>Upload PDF, Excel, or CSV file to begin analysis</p>
+        </div>
+    </div>
+
+    <div class="card" style="max-width: 720px;">
+        <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data">
+
+            <div class="drop-zone" id="dropZone">
+                <div class="drop-zone-icon">📁</div>
+                <div class="drop-zone-text" id="dropText">Click to upload or drag file here</div>
+                <div class="drop-zone-hint">
+                    Accepted: .pdf, .xlsx, .xls, .csv &nbsp;|&nbsp; Max 10 MB<br>
+                    Upload columns: S.No, Reg No, any number of Subject columns, Total Mark
+                </div>
+                <input type="file" name="file" id="fileInput"
+                       accept=".pdf,.xlsx,.xls,.csv" required>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 22px;">
+                <div class="form-group">
+                    <label>Minimum Pass Mark <span class="req">*</span></label>
+                    <input type="number" name="pass_mark" class="form-control"
+                           value="40" min="0" max="100" required>
+                </div>
+                <div class="form-group">
+                    <label>College Name (optional)</label>
+                    <input type="text" name="college_name" class="form-control"
+                           placeholder="e.g. ABC Institute of Technology">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Class Info (optional)</label>
+                <input type="text" name="class_info" class="form-control"
+                       placeholder="e.g. B.Tech AI&DS | II Year | Sec A | CAT I">
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" style="margin-top: 8px;">
+                ⚡ Analyze Results
+            </button>
+        </form>
+    </div>
+
+    {% if history %}
+    <div class="table-wrap" style="margin-top: 32px;">
+        <div class="table-header">
+            <h3>📜 Recent Uploads</h3>
+            <span class="count-pill">{{ history|length }} records</span>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>File</th><th>Pass Mark</th><th>Total</th>
+                    <th>Passed</th><th>Failed</th><th>Uploaded</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in history %}
+                <tr>
+                    <td><strong>{{ r.filename }}</strong></td>
+                    <td>{{ r.pass_mark }}</td>
+                    <td>{{ r.total_students }}</td>
+                    <td><span class="badge badge-pass">{{ r.passed }}</span></td>
+                    <td><span class="badge badge-fail">{{ r.failed }}</span></td>
+                    <td style="color:#6b7280; font-size:13px;">
+                        {{ r.uploaded_at[:16].replace('T', ' ') }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}
