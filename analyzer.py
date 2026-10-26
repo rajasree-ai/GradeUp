@@ -5,6 +5,7 @@ Handles consolidated format like: S.No | RegNo | Subj1...SubjN | Total
 import os
 import re
 from datetime import datetime
+from xml.sax.saxutils import escape
 import pdfplumber
 import pandas as pd
 from reportlab.lib.pagesizes import A4, landscape
@@ -698,14 +699,19 @@ class ResultAnalyzer:
                 continue
             roll = str(row.get(self.roll_col, ""))
             name = str(row.get(self.name_col, "")) if self.name_col else ""
-            for subject, weakness, action in failed_subjects:
-                rows.append([
-                    Paragraph(roll, cell_style),
-                    Paragraph(name, left_cell_style),
-                    Paragraph(str(subject), left_cell_style),
-                    Paragraph(weakness, cell_style),
-                    Paragraph(action, cell_style),
-                ])
+            rows.append([
+                Paragraph(escape(roll), cell_style),
+                Paragraph(escape(name), left_cell_style),
+                Paragraph("<br/>".join(
+                    escape(str(subject)) for subject, _, _ in failed_subjects
+                ), left_cell_style),
+                Paragraph("<br/>".join(
+                    escape(weakness) for _, weakness, _ in failed_subjects
+                ), cell_style),
+                Paragraph("<br/>".join(
+                    escape(action) for _, _, action in failed_subjects
+                ), cell_style),
+            ])
 
         if len(rows) == 1:
             rows.append([
