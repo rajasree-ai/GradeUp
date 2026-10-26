@@ -618,6 +618,124 @@ class ResultAnalyzer:
         doc.build(story)
         return out_path
 
+    def export_counselling_pdf(self, output_dir, college_name="",
+                               department="", class_info="",
+                               academic_year=""):
+        """Export a counselling report for failed and absent subjects."""
+        os.makedirs(output_dir, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        out_path = os.path.join(
+            output_dir, f"student_counselling_report_{timestamp}.pdf"
+        )
+
+        if self.df is None:
+            self.load_data()
+        if self.failures_df is None:
+            self.analyze()
+
+        doc = SimpleDocTemplate(
+            out_path, pagesize=A4,
+            leftMargin=12 * mm, rightMargin=12 * mm,
+            topMargin=12 * mm, bottomMargin=12 * mm,
+        )
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            "CounsellingTitle", parent=styles["Title"],
+            fontName="Helvetica-Bold", fontSize=14, leading=17,
+            alignment=1, spaceAfter=2 * mm,
+        )
+        header_style = ParagraphStyle(
+            "CounsellingHeader", parent=styles["Normal"],
+            fontSize=8.5, leading=11, alignment=1,
+        )
+        cell_style = ParagraphStyle(
+            "CounsellingCell", parent=styles["Normal"],
+            fontSize=7.5, leading=9, alignment=1,
+        )
+        left_cell_style = ParagraphStyle(
+            "CounsellingLeftCell", parent=cell_style, alignment=0,
+        )
+
+        story = [
+            Paragraph(
+                college_name or "STUDENT COUNSELLING REPORT", title_style
+            ),
+            Paragraph(
+                f"<b>DEPARTMENT:</b> {department or '-'}",
+                header_style,
+            ),
+            Paragraph(
+                f"<b>CLASS / TEST:</b> {class_info or '-'}"
+                f" &nbsp;&nbsp; <b>ACADEMIC YEAR:</b> {academic_year or '-'}",
+                header_style,
+            ),
+            Spacer(1, 5 * mm),
+        ]
+
+        headers = [
+            "Roll No", "Name of<br/>Student", "Name of the Subject",
+            "Area of weakness<br/>(Absent / On duty)", "Action taken",
+        ]
+        rows = [[Paragraph(header, header_style) for header in headers]]
+
+        for _, row in self.df.iterrows():
+            failed_subjects = []
+            for subject in self.subjects:
+                value = row.get(subject, "")
+                normalized = str(value).strip().upper()
+                number = pd.to_numeric(value, errors="coerce")
+                if normalized in {"AB", "ABSENT", "A"}:
+                    weakness = "Absent for Exam"
+                    action = "Retest Conducted"
+                elif pd.notna(number) and number < self.pass_mark:
+                    weakness = "Subject Understanding"
+                    action = "Special Class Conducted"
+                else:
+                    continue
+                failed_subjects.append((subject, weakness, action))
+
+            if not failed_subjects:
+                continue
+            roll = str(row.get(self.roll_col, ""))
+            name = str(row.get(self.name_col, "")) if self.name_col else ""
+            for subject, weakness, action in failed_subjects:
+                rows.append([
+                    Paragraph(roll, cell_style),
+                    Paragraph(name, left_cell_style),
+                    Paragraph(str(subject), left_cell_style),
+                    Paragraph(weakness, cell_style),
+                    Paragraph(action, cell_style),
+                ])
+
+        if len(rows) == 1:
+            rows.append([
+                Paragraph("-", cell_style),
+                Paragraph("No failed or absent subjects", cell_style),
+                Paragraph("-", cell_style),
+                Paragraph("-", cell_style),
+                Paragraph("-", cell_style),
+            ])
+
+        table = Table(
+            rows,
+            colWidths=[22 * mm, 30 * mm, 48 * mm, 42 * mm, 34 * mm],
+            repeatRows=1,
+        )
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#eeeeee")),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1),
+             [colors.white, colors.HexColor("#fafafa")]),
+            ("TOPPADDING", (0, 0), (-1, -1), 6),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ]))
+        story.append(table)
+        doc.build(story)
+        return out_path
+
     # ============================================================
     #  PDF EXPORT
     # ============================================================

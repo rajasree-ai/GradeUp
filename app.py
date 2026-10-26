@@ -45,6 +45,7 @@ def upload():
     pass_mark = int(request.form.get("pass_mark", 40))
     college_name = request.form.get("college_name", "").strip()
     class_info = request.form.get("class_info", "").strip()
+    academic_year = request.form.get("academic_year", "").strip()
 
     if file.filename == "" or not allowed_file(file.filename):
         flash("Invalid file. Use .pdf, .xlsx, .xls, or .csv", "danger")
@@ -65,6 +66,7 @@ def upload():
         session["pass_mark"] = pass_mark
         session["college_name"] = college_name
         session["class_info"] = class_info
+        session["academic_year"] = academic_year
 
         save_upload(current_user.id, filename, pass_mark, stats)
         return redirect(url_for("dashboard"))
@@ -176,6 +178,28 @@ def download_student_correction_pdf():
         REPORT_FOLDER,
         college_name=session.get("college_name", ""),
         class_info=session.get("class_info", ""),
+    )
+    return send_file(out_path, as_attachment=True,
+                     download_name=os.path.basename(out_path))
+
+
+@app.route("/download-counselling-report")
+@login_required
+def download_counselling_report():
+    filepath = session.get("filepath")
+    pass_mark = session.get("pass_mark", 40)
+    if not filepath:
+        return redirect(url_for("index"))
+
+    analyzer = ResultAnalyzer(filepath, pass_mark)
+    analyzer.load_data()
+    analyzer.analyze()
+    out_path = analyzer.export_counselling_pdf(
+        REPORT_FOLDER,
+        college_name=session.get("college_name", ""),
+        department=current_user.department,
+        class_info=session.get("class_info", ""),
+        academic_year=session.get("academic_year", ""),
     )
     return send_file(out_path, as_attachment=True,
                      download_name=os.path.basename(out_path))
