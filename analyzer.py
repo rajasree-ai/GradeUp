@@ -621,7 +621,8 @@ class ResultAnalyzer:
 
     def export_counselling_pdf(self, output_dir, college_name="",
                                department="", class_info="",
-                               academic_year=""):
+                               academic_year="", branch="",
+                               year_semester="", exam_details=""):
         """Export a counselling report for failed and absent subjects."""
         os.makedirs(output_dir, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -657,24 +658,34 @@ class ResultAnalyzer:
             "CounsellingLeftCell", parent=cell_style, alignment=0,
         )
 
-        story = [
-            Paragraph(
-                college_name or "STUDENT COUNSELLING REPORT", title_style
-            ),
-            Paragraph(
-                f"<b>DEPARTMENT:</b> {department or '-'}",
-                header_style,
-            ),
-            Paragraph(
-                f"<b>CLASS / TEST:</b> {class_info or '-'}"
-                f" &nbsp;&nbsp; <b>ACADEMIC YEAR:</b> {academic_year or '-'}",
-                header_style,
-            ),
-            Spacer(1, 5 * mm),
+        story = [Paragraph(
+            f"<b>{escape(class_info or 'CAT-II - II Year A Section')}</b>",
+            header_style,
+        )]
+        metadata = [
+            ["Branch", branch or department or "-"],
+            ["Year / Semester", year_semester or "-"],
+            ["Details of Exam", exam_details or academic_year or "-"],
         ]
+        metadata_table = Table(
+            [[Paragraph(f"<b>{escape(label)}</b>", left_cell_style),
+              Paragraph(escape(value), left_cell_style)]
+             for label, value in metadata],
+            colWidths=[35 * mm, 151 * mm],
+        )
+        metadata_table.setStyle(TableStyle([
+            ("GRID", (0, 0), (-1, -1), 0.4, colors.grey),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 3),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 3),
+            ("TOPPADDING", (0, 0), (-1, -1), 3),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ]))
+        story.extend([metadata_table, Spacer(1, 5 * mm)])
 
         headers = [
-            "Roll No", "Name of<br/>Student", "Name of the Subject",
+            "Roll No", "Name of the<br/>student",
+            "Name of the subject &<br/>Faculty",
             "Area of weakness<br/>(Absent / On duty)", "Action taken",
         ]
         rows = [[Paragraph(header, header_style) for header in headers]]
@@ -703,7 +714,8 @@ class ResultAnalyzer:
                 Paragraph(escape(roll), cell_style),
                 Paragraph(escape(name), left_cell_style),
                 Paragraph("<br/>".join(
-                    escape(str(subject)) for subject, _, _ in failed_subjects
+                    f"{escape(str(subject))}<br/><font size='7'>Faculty: -</font>"
+                    for subject, _, _ in failed_subjects
                 ), left_cell_style),
                 Paragraph("<br/>".join(
                     escape(weakness) for _, weakness, _ in failed_subjects
@@ -724,7 +736,7 @@ class ResultAnalyzer:
 
         table = Table(
             rows,
-            colWidths=[22 * mm, 30 * mm, 48 * mm, 42 * mm, 34 * mm],
+            colWidths=[20 * mm, 27 * mm, 56 * mm, 43 * mm, 40 * mm],
             repeatRows=1,
         )
         table.setStyle(TableStyle([
