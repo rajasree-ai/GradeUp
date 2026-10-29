@@ -657,6 +657,14 @@ class ResultAnalyzer:
         left_cell_style = ParagraphStyle(
             "CounsellingLeftCell", parent=cell_style, alignment=0,
         )
+        report_detail_style = ParagraphStyle(
+            "CounsellingDetail", parent=cell_style,
+            fontSize=8, leading=14, spaceAfter=2,
+        )
+        report_subject_style = ParagraphStyle(
+            "CounsellingSubject", parent=cell_style,
+            fontSize=8, leading=14, alignment=0, spaceAfter=2,
+        )
 
         story = [Paragraph(
             f"<b>{escape(class_info or 'CAT-II - II Year A Section')}</b>",
@@ -716,13 +724,13 @@ class ResultAnalyzer:
                 Paragraph("<br/>".join(
                     f"{escape(str(subject))}<br/><font size='7'>Faculty: -</font>"
                     for subject, _, _ in failed_subjects
-                ), left_cell_style),
+                ), report_subject_style),
                 Paragraph("<br/>".join(
                     escape(weakness) for _, weakness, _ in failed_subjects
-                ), cell_style),
+                ), report_detail_style),
                 Paragraph("<br/>".join(
                     escape(action) for _, _, action in failed_subjects
-                ), cell_style),
+                ), report_detail_style),
             ])
 
         if len(rows) == 1:
@@ -749,6 +757,8 @@ class ResultAnalyzer:
              [colors.white, colors.HexColor("#fafafa")]),
             ("TOPPADDING", (0, 0), (-1, -1), 6),
             ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ("TOPPADDING", (2, 1), (-1, -1), 10),
+            ("BOTTOMPADDING", (2, 1), (-1, -1), 10),
         ]))
         story.append(table)
         doc.build(story)
