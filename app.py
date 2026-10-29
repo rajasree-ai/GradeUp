@@ -204,5 +204,77 @@ def download_counselling_report():
                      download_name=os.path.basename(out_path))
 
 
+@app.route("/download-counselling-word")
+@login_required
+def download_counselling_word():
+    filepath = session.get("filepath")
+    pass_mark = session.get("pass_mark", 40)
+    if not filepath:
+        return redirect(url_for("index"))
+
+    analyzer = ResultAnalyzer(filepath, pass_mark)
+    analyzer.load_data()
+    analyzer.analyze()
+    out_path = analyzer.export_counselling_docx(
+        REPORT_FOLDER,
+        class_key=session.get("class_key", ""),
+    )
+    return send_file(
+        out_path,
+        as_attachment=True,
+        download_name=os.path.basename(out_path),
+        mimetype=(
+            "application/vnd.openxmlformats-officedocument."
+            "wordprocessingml.document"
+        ),
+    )
+
+
+@app.route("/download-report-word")
+@login_required
+def download_report_word():
+    filepath = session.get("filepath")
+    pass_mark = session.get("pass_mark", 40)
+    if not filepath:
+        return redirect(url_for("index"))
+
+    analyzer = ResultAnalyzer(filepath, pass_mark)
+    analyzer.load_data()
+    analyzer.analyze()
+    out_path = analyzer.export_full_report_docx(REPORT_FOLDER)
+    return send_file(
+        out_path,
+        as_attachment=True,
+        download_name=os.path.basename(out_path),
+        mimetype=(
+            "application/vnd.openxmlformats-officedocument."
+            "wordprocessingml.document"
+        ),
+    )
+
+
+@app.route("/download-student-correction-word")
+@login_required
+def download_student_correction_word():
+    filepath = session.get("filepath")
+    pass_mark = session.get("pass_mark", 40)
+    if not filepath:
+        return redirect(url_for("index"))
+
+    analyzer = ResultAnalyzer(filepath, pass_mark)
+    analyzer.load_data()
+    analyzer.analyze()
+    out_path = analyzer.export_correction_docx(REPORT_FOLDER)
+    return send_file(
+        out_path,
+        as_attachment=True,
+        download_name=os.path.basename(out_path),
+        mimetype=(
+            "application/vnd.openxmlformats-officedocument."
+            "wordprocessingml.document"
+        ),
+    )
+
+
 if __name__ == "__main__":
     app.run(debug=True)

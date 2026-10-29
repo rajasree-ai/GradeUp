@@ -89,6 +89,43 @@ def _extract_section_letter(value):
     return match.group(1) if match else ""
 
 
+def _class_subject_mapping(class_key, class_info, raw_text, subjects):
+    normalized_lookup = {
+        _normalize_class_key(key): value
+        for key, value in CLASS_SUBJECT_FACULTY.items()
+    }
+    mapping = normalized_lookup.get(_normalize_class_key(class_key), {})
+    if mapping:
+        return mapping
+
+    normalized_metadata = _normalize_class_key(raw_text)
+    for key, candidate in normalized_lookup.items():
+        if key in normalized_metadata:
+            return candidate
+
+    subject_codes = {str(subject).strip().upper() for subject in subjects}
+    ranked = []
+    for key, candidate in CLASS_SUBJECT_FACULTY.items():
+        mapped_codes = {code.strip().upper() for code in candidate}
+        score = len(subject_codes & mapped_codes)
+        if score:
+            ranked.append((score, key, candidate))
+    if not ranked:
+        return {}
+
+    ranked.sort(key=lambda item: (-item[0], item[1]))
+    desired_section = (
+        _extract_section_letter(class_key)
+        or _extract_section_letter(class_info)
+        or _extract_section_letter(raw_text)
+    )
+    if desired_section:
+        for score, key, candidate in ranked:
+            if score == ranked[0][0] and key.endswith(f"/{desired_section}"):
+                return candidate
+    return ranked[0][2]
+
+
 class CircledMark(Flowable):
     """Display a failed mark with a circle around it in the PDF table."""
 
@@ -772,45 +809,9 @@ class ResultAnalyzer:
         ]
         rows = [[Paragraph(header, header_style) for header in headers]]
         span_ranges = []
-        normalized_lookup = {
-            _normalize_class_key(key): value
-            for key, value in CLASS_SUBJECT_FACULTY.items()
-        }
-        normalized_input_key = _normalize_class_key(class_key)
-        class_mapping = normalized_lookup.get(normalized_input_key, {})
-
-        if not class_mapping:
-            metadata = _normalize_class_key(self.raw_text)
-            class_mapping = next(
-                (
-                    mapping for key, mapping in normalized_lookup.items()
-                    if key in metadata
-                ),
-                {},
-            )
-
-        if not class_mapping:
-            subject_codes = {str(subject).strip().upper() for subject in self.subjects}
-            ranked = []
-            for key, mapping in CLASS_SUBJECT_FACULTY.items():
-                mapped_codes = {code.strip().upper() for code in mapping.keys()}
-                score = len(subject_codes & mapped_codes)
-                if score > 0:
-                    ranked.append((score, key, mapping))
-            if ranked:
-                desired_section = (
-                    _extract_section_letter(class_key)
-                    or _extract_section_letter(class_info)
-                    or _extract_section_letter(self.raw_text)
-                )
-                ranked.sort(key=lambda item: (-item[0], item[1]))
-                class_mapping = ranked[0][2]
-                if desired_section:
-                    same_score = [item for item in ranked if item[0] == ranked[0][0]]
-                    for _, key, mapping in same_score:
-                        if key.endswith(f"/{desired_section}"):
-                            class_mapping = mapping
-                            break
+        class_mapping = _class_subject_mapping(
+            class_key, class_info, self.raw_text, self.subjects
+        )
 
         for _, row in self.df.iterrows():
             failed_subjects = []
@@ -888,6 +889,328 @@ class ResultAnalyzer:
         story.append(table)
         doc.build(story)
         return out_path
+
+    def export_counselling_docx(self, output_dir, class_key=""):
+        """Export the counselling report as an editable Word document."""
+        from docx import Document
+        from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
+        from docx.enum.text import WD_ALIGN_PARAGRAPH
+        from docx.shared import Inches, Pt
+
+        os.makedirs(output_dir, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        out_path = os.path.join(
+            output_dir, f"student_counselling_report_{timestamp}.docx"
+        )
+        if self.df is None:
+            self.load_data()
+        if self.failures_df is None:
+            self.analyze()
+
+        class_mapping = _class_subject_mapping(
+            class_key, "", self.raw_text, self.subjects
+        )
+        document = Document()
+        section = document.sections[0]
+        section.top_margin = Inches(0.55)
+        section.bottom_margin = Inches(0.55)
+        section.left_margin = Inches(0.55)
+        section.right_margin = Inches(0.55)
+
+        class_match = re.search(
+            r"Year/Sem/Sec\s*:\s*([IVX]+)\s*/\s*(\d+)\s*/\s*([A-Z])",
+            self.raw_text,
+            re.IGNORECASE,
+        )
+        exam_match = re.search(r"\bCAT\s*(I{1,3}|IV)\b", self.raw_text, re.I)
+        if class_match:
+            year, semester, section = class_match.groups()
+            class_title = (
+                f"{exam_match.group(0).upper() if exam_match else 'Student'}"
+                f" - {year.upper()} Year {section.upper()} Section"
+            )
+            class_value = f"{year.upper()} / {semester} / {section.upper()}"
+        else:
+            class_title = "Student Counselling Report"
+            class_value = "-"
+
+        title = document.add_paragraph()
+        title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = title.add_run(class_title)
+        run.bold = True
+        run.font.size = Pt(12)
+
+        metadata = document.add_table(rows=3, cols=2)
+        metadata.style = "Table Grid"
+        metadata_values = [
+            ("Branch", self._branch_from_source()),
+            ("Year / Semester", class_value),
+            ("Details of Exam", exam_match.group(0).upper() if exam_match else "-"),
+        ]
+        for row, (label, value) in zip(metadata.rows, metadata_values):
+            row.cells[0].text = label
+            row.cells[1].text = value
+            row.cells[0].paragraphs[0].runs[0].bold = True
+
+        document.add_paragraph()
+        table = document.add_table(rows=1, cols=5)
+        table.style = "Table Grid"
+        table.autofit = False
+        headers = [
+            "Roll No", "Name of the student", "Name of the subject & Faculty",
+            "Area of weakness (Absent / On duty)", "Action taken",
+        ]
+        widths = [Inches(0.75), Inches(0.9), Inches(2.0), Inches(1.35), Inches(1.1)]
+        for cell, label, width in zip(table.rows[0].cells, headers, widths):
+            cell.text = label
+            cell.width = width
+            cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+            for paragraph in cell.paragraphs:
+                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                for run in paragraph.runs:
+                    run.bold = True
+                    run.font.size = Pt(8)
+
+        student_blocks = []
+        for _, row in self.df.iterrows():
+            failed_subjects = []
+            for subject in self.subjects:
+                value = row.get(subject, "")
+                normalized = str(value).strip().upper()
+                number = pd.to_numeric(value, errors="coerce")
+                if normalized in {"AB", "ABSENT", "A"}:
+                    weakness, action = "Absent for Exam", "Retest Conducted"
+                elif pd.notna(number) and number < self.pass_mark:
+                    weakness, action = (
+                        "Subject Understanding", "Special Class Conducted"
+                    )
+                else:
+                    continue
+                failed_subjects.append((subject, weakness, action))
+
+            if failed_subjects:
+                student_blocks.append((row, failed_subjects))
+
+        for student, failed_subjects in student_blocks:
+            first_row = len(table.rows)
+            for subject, weakness, action in failed_subjects:
+                cells = table.add_row().cells
+                subject_name, faculty_name = class_mapping.get(
+                    str(subject), ("Unknown subject", "-")
+                )
+                cells[0].text = str(student.get(self.roll_col, ""))
+                cells[1].text = (
+                    str(student.get(self.name_col, "")) if self.name_col else ""
+                )
+                cells[2].text = (
+                    f"{subject_name}\nCode: {subject}\nFaculty: {faculty_name}"
+                )
+                cells[3].text = weakness
+                cells[4].text = action
+                for cell, width in zip(cells, widths):
+                    cell.width = width
+                    cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+                    for paragraph in cell.paragraphs:
+                        paragraph.alignment = (
+                            WD_ALIGN_PARAGRAPH.LEFT
+                            if cell is cells[2]
+                            else WD_ALIGN_PARAGRAPH.CENTER
+                        )
+                        for run in paragraph.runs:
+                            run.font.size = Pt(8)
+
+            if len(failed_subjects) > 1:
+                last_row = len(table.rows) - 1
+                table.cell(first_row, 0).merge(table.cell(last_row, 0))
+                table.cell(first_row, 1).merge(table.cell(last_row, 1))
+
+        if not student_blocks:
+            cells = table.add_row().cells
+            cells[0].text = "-"
+            cells[1].text = "No failed or absent subjects"
+            for cell in cells[2:]:
+                cell.text = "-"
+
+        document.save(out_path)
+        return out_path
+
+    def export_correction_docx(self, output_dir):
+        """Export the all-subject mark correction matrix as Word."""
+        from docx import Document
+        from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
+        from docx.enum.section import WD_ORIENT
+        from docx.enum.text import WD_ALIGN_PARAGRAPH
+        from docx.shared import Inches, Pt
+
+        os.makedirs(output_dir, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        out_path = os.path.join(
+            output_dir, f"student_correction_report_{timestamp}.docx"
+        )
+        if self.df is None:
+            self.load_data()
+        if self.failures_df is None:
+            self.analyze()
+
+        document = Document()
+        section = document.sections[0]
+        section.orientation = WD_ORIENT.LANDSCAPE
+        section.page_width = Inches(11)
+        section.page_height = Inches(8.5)
+        section.top_margin = Inches(0.45)
+        section.bottom_margin = Inches(0.45)
+        section.left_margin = Inches(0.45)
+        section.right_margin = Inches(0.45)
+        document.add_heading("Student Detailed Correction Report", level=1)
+
+        headers = ["Roll No", "Name of Student"] + [str(s) for s in self.subjects]
+        table = document.add_table(rows=1, cols=len(headers))
+        table.style = "Table Grid"
+        table.autofit = True
+        for cell, label in zip(table.rows[0].cells, headers):
+            cell.text = label
+            for paragraph in cell.paragraphs:
+                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                for run in paragraph.runs:
+                    run.bold = True
+                    run.font.size = Pt(8)
+
+        for _, row in self.df.iterrows():
+            cells = table.add_row().cells
+            name = row.get(self.name_col, "") if self.name_col else ""
+            cells[0].text = str(row.get(self.roll_col, ""))
+            cells[1].text = "" if pd.isna(name) else str(name)
+            for index, subject in enumerate(self.subjects, start=2):
+                value = row.get(subject, "")
+                normalized = str(value).strip().upper()
+                number = pd.to_numeric(value, errors="coerce")
+                if normalized in {"OD", "ON DUTY", "ON-DUTY", "AB", "ABSENT", "A"}:
+                    rendered = ""
+                elif pd.notna(number) and number >= self.pass_mark:
+                    rendered = "\N{EN DASH}"
+                else:
+                    rendered = ""
+                cells[index].text = rendered
+            for cell in cells:
+                cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+                for paragraph in cell.paragraphs:
+                    paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    for run in paragraph.runs:
+                        run.font.size = Pt(8)
+
+        document.save(out_path)
+        return out_path
+
+    def export_full_report_docx(self, output_dir):
+        """Export the complete result analysis, including every uploaded subject."""
+        from docx import Document
+        from docx.enum.section import WD_ORIENT
+        from docx.enum.text import WD_ALIGN_PARAGRAPH
+        from docx.shared import Inches, Pt
+
+        os.makedirs(output_dir, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        out_path = os.path.join(output_dir, f"result_report_{timestamp}.docx")
+        if self.df is None:
+            self.load_data()
+        if self.failures_df is None:
+            self.analyze()
+
+        document = Document()
+        section = document.sections[0]
+        section.orientation = WD_ORIENT.LANDSCAPE
+        section.page_width = Inches(11)
+        section.page_height = Inches(8.5)
+        section.top_margin = Inches(0.5)
+        section.bottom_margin = Inches(0.5)
+        section.left_margin = Inches(0.5)
+        section.right_margin = Inches(0.5)
+
+        title = document.add_heading("Student Result Analysis Report", level=1)
+        title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        branch = self._branch_from_source()
+        if branch != "-":
+            document.add_paragraph(f"Branch: {branch}")
+
+        stats = self.get_statistics()
+        document.add_heading("Class Summary", level=2)
+        summary = document.add_table(rows=2, cols=4)
+        summary.style = "Table Grid"
+        summary_headers = ["Total Students", "Passed", "Failed", "Pass Percentage"]
+        summary_values = [
+            stats["total_students"], stats["passed_students"],
+            stats["failed_students"], f"{stats['pass_percentage']}%",
+        ]
+        for index, value in enumerate(summary_headers):
+            summary.cell(0, index).text = value
+            summary.cell(0, index).paragraphs[0].runs[0].bold = True
+            summary.cell(1, index).text = str(summary_values[index])
+
+        mapping = _class_subject_mapping("", "", self.raw_text, self.subjects)
+        document.add_heading("Subject-wise Statistics", level=2)
+        subject_table = document.add_table(rows=1, cols=6)
+        subject_table.style = "Table Grid"
+        stat_headers = ["Subject Code", "Subject", "Passed", "Failed", "Average", "Maximum"]
+        for cell, label in zip(subject_table.rows[0].cells, stat_headers):
+            cell.text = label
+            cell.paragraphs[0].runs[0].bold = True
+        for subject in self.subjects:
+            subject_name = mapping.get(subject, (str(subject), "-"))[0]
+            row_cells = subject_table.add_row().cells
+            values = [
+                subject, subject_name,
+                stats["subject_pass_counts"][subject],
+                stats["subject_fail_counts"][subject],
+                stats["subject_avg"][subject],
+                stats["subject_max"][subject],
+            ]
+            for cell, value in zip(row_cells, values):
+                cell.text = str(value)
+
+        document.add_heading("Consolidated Mark List", level=2)
+        consolidated = self.consolidated_mark_list()
+        mark_headers = [str(column) for column in consolidated.columns]
+        marks_table = document.add_table(rows=1, cols=len(mark_headers))
+        marks_table.style = "Table Grid"
+        for cell, label in zip(marks_table.rows[0].cells, mark_headers):
+            cell.text = label
+            for run in cell.paragraphs[0].runs:
+                run.bold = True
+                run.font.size = Pt(7)
+        for _, data_row in consolidated.iterrows():
+            cells = marks_table.add_row().cells
+            for cell, column in zip(cells, consolidated.columns):
+                value = data_row[column]
+                cell.text = "" if pd.isna(value) else str(value)
+                for run in cell.paragraphs[0].runs:
+                    run.font.size = Pt(7)
+
+        document.add_heading("Subject-wise Round Lists", level=2)
+        for subject, students in self.generate_round_lists().items():
+            document.add_heading(str(subject), level=3)
+            round_table = document.add_table(rows=1, cols=3)
+            round_table.style = "Table Grid"
+            for cell, label in zip(
+                round_table.rows[0].cells, ["S.No", "Roll No", "Marks Obtained"]
+            ):
+                cell.text = label
+                cell.paragraphs[0].runs[0].bold = True
+            for student in students:
+                cells = round_table.add_row().cells
+                cells[0].text = str(student.get("S.No", ""))
+                cells[1].text = str(student.get("Reg No", ""))
+                cells[2].text = str(student.get("Marks_Obtained", ""))
+
+        document.save(out_path)
+        return out_path
+
+    def _branch_from_source(self):
+        match = re.search(
+            r"B\.?\s*Tech\s*-\s*(.+?)(?:\r?\n|$)",
+            self.raw_text,
+            re.IGNORECASE,
+        )
+        return match.group(1).strip() if match else "-"
 
     # ============================================================
     #  PDF EXPORT
