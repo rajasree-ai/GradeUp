@@ -265,6 +265,15 @@ class ResultAnalyzer:
 
         self._extract_subject_headers(full_text)
         self._extract_subjects_from_summary(full_text)
+        if self.pdf_optional_columns:
+            optional_code = re.search(
+                r"\((\d{2}[A-Z]{2,4}\d{2,3})\)", full_text, re.IGNORECASE
+            )
+            if optional_code:
+                code = optional_code.group(1).upper()
+                if code not in self.subject_names:
+                    self.subject_names.append(code)
+                self.pdf_optional_columns = []
 
         # Extract student rows — multiple strategies
         students = self._extract_student_rows(full_text)
@@ -367,7 +376,12 @@ class ResultAnalyzer:
             sno, regno = m.group(1), m.group(2)
             if regno in seen_regnos:
                 continue
-            tokens = m.group(3).split()
+            tokens = [
+                token for token in m.group(3).split()
+                if not re.fullmatch(
+                    r"\(\d{2}[A-Z]{2,4}\d{2,3}\)", token, re.IGNORECASE
+                )
+            ]
             expected_columns = len(self.subject_names) + len(
                 self.pdf_optional_columns
             )
@@ -822,6 +836,9 @@ class ResultAnalyzer:
                 if normalized in {"AB", "ABSENT", "A"}:
                     weakness = "Absent for Exam"
                     action = "Retest Conducted"
+                elif normalized in {"OD", "ON DUTY", "ON-DUTY"}:
+                    weakness = "On Duty"
+                    action = "OD Recorded"
                 elif pd.notna(number) and number < self.pass_mark:
                     weakness = "Subject Understanding"
                     action = "Special Class Conducted"
@@ -980,6 +997,8 @@ class ResultAnalyzer:
                 number = pd.to_numeric(value, errors="coerce")
                 if normalized in {"AB", "ABSENT", "A"}:
                     weakness, action = "Absent for Exam", "Retest Conducted"
+                elif normalized in {"OD", "ON DUTY", "ON-DUTY"}:
+                    weakness, action = "On Duty", "OD Recorded"
                 elif pd.notna(number) and number < self.pass_mark:
                     weakness, action = (
                         "Subject Understanding", "Special Class Conducted"
