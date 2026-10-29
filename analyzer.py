@@ -79,6 +79,16 @@ CLASS_SUBJECT_FACULTY = {
 }
 
 
+def _normalize_class_key(value):
+    return re.sub(r"\s+", "", str(value or "").upper())
+
+
+def _extract_section_letter(value):
+    text = str(value or "").upper()
+    match = re.search(r"(?:/|SECTION\s*|YEAR\s+)([A-Z])\b", text)
+    return match.group(1) if match else ""
+
+
 class CircledMark(Flowable):
     """Display a failed mark with a circle around it in the PDF table."""
 
@@ -762,9 +772,45 @@ class ResultAnalyzer:
         ]
         rows = [[Paragraph(header, header_style) for header in headers]]
         span_ranges = []
-        class_mapping = CLASS_SUBJECT_FACULTY.get(
-            class_key.strip().upper(), {}
-        )
+        normalized_lookup = {
+            _normalize_class_key(key): value
+            for key, value in CLASS_SUBJECT_FACULTY.items()
+        }
+        normalized_input_key = _normalize_class_key(class_key)
+        class_mapping = normalized_lookup.get(normalized_input_key, {})
+
+        if not class_mapping:
+            metadata = _normalize_class_key(self.raw_text)
+            class_mapping = next(
+                (
+                    mapping for key, mapping in normalized_lookup.items()
+                    if key in metadata
+                ),
+                {},
+            )
+
+        if not class_mapping:
+            subject_codes = {str(subject).strip().upper() for subject in self.subjects}
+            ranked = []
+            for key, mapping in CLASS_SUBJECT_FACULTY.items():
+                mapped_codes = {code.strip().upper() for code in mapping.keys()}
+                score = len(subject_codes & mapped_codes)
+                if score > 0:
+                    ranked.append((score, key, mapping))
+            if ranked:
+                desired_section = (
+                    _extract_section_letter(class_key)
+                    or _extract_section_letter(class_info)
+                    or _extract_section_letter(self.raw_text)
+                )
+                ranked.sort(key=lambda item: (-item[0], item[1]))
+                class_mapping = ranked[0][2]
+                if desired_section:
+                    same_score = [item for item in ranked if item[0] == ranked[0][0]]
+                    for _, key, mapping in same_score:
+                        if key.endswith(f"/{desired_section}"):
+                            class_mapping = mapping
+                            break
 
         for _, row in self.df.iterrows():
             failed_subjects = []
