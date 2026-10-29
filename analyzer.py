@@ -659,11 +659,11 @@ class ResultAnalyzer:
         )
         report_detail_style = ParagraphStyle(
             "CounsellingDetail", parent=cell_style,
-            fontSize=8, leading=14, spaceAfter=2,
+            fontSize=8, leading=10, spaceAfter=1,
         )
         report_subject_style = ParagraphStyle(
             "CounsellingSubject", parent=cell_style,
-            fontSize=8, leading=14, alignment=0, spaceAfter=2,
+            fontSize=8, leading=10, alignment=0, spaceAfter=1,
         )
 
         story = [Paragraph(
@@ -697,6 +697,7 @@ class ResultAnalyzer:
             "Area of weakness<br/>(Absent / On duty)", "Action taken",
         ]
         rows = [[Paragraph(header, header_style) for header in headers]]
+        span_ranges = []
 
         for _, row in self.df.iterrows():
             failed_subjects = []
@@ -718,20 +719,21 @@ class ResultAnalyzer:
                 continue
             roll = str(row.get(self.roll_col, ""))
             name = str(row.get(self.name_col, "")) if self.name_col else ""
-            rows.append([
-                Paragraph(escape(roll), cell_style),
-                Paragraph(escape(name), left_cell_style),
-                Paragraph("<br/>".join(
-                    f"{escape(str(subject))}<br/><font size='7'>Faculty: -</font>"
-                    for subject, _, _ in failed_subjects
-                ), report_subject_style),
-                Paragraph("<br/>".join(
-                    escape(weakness) for _, weakness, _ in failed_subjects
-                ), report_detail_style),
-                Paragraph("<br/>".join(
-                    escape(action) for _, _, action in failed_subjects
-                ), report_detail_style),
-            ])
+            block_start = len(rows)
+            for idx, (subject, weakness, action) in enumerate(failed_subjects):
+                rows.append([
+                    Paragraph(escape(roll), cell_style) if idx == 0 else "",
+                    Paragraph(escape(name), left_cell_style) if idx == 0 else "",
+                    Paragraph(
+                        f"{escape(str(subject))}<br/><font size='7'>Faculty: -</font>",
+                        report_subject_style,
+                    ),
+                    Paragraph(escape(weakness), report_detail_style),
+                    Paragraph(escape(action), report_detail_style),
+                ])
+            block_end = len(rows) - 1
+            if block_end > block_start:
+                span_ranges.append((block_start, block_end))
 
         if len(rows) == 1:
             rows.append([
@@ -757,9 +759,14 @@ class ResultAnalyzer:
              [colors.white, colors.HexColor("#fafafa")]),
             ("TOPPADDING", (0, 0), (-1, -1), 6),
             ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-            ("TOPPADDING", (2, 1), (-1, -1), 10),
-            ("BOTTOMPADDING", (2, 1), (-1, -1), 10),
+            ("TOPPADDING", (2, 1), (-1, -1), 8),
+            ("BOTTOMPADDING", (2, 1), (-1, -1), 8),
         ]))
+        for start_row, end_row in span_ranges:
+            table.setStyle(TableStyle([
+                ("SPAN", (0, start_row), (0, end_row)),
+                ("SPAN", (1, start_row), (1, end_row)),
+            ]))
         story.append(table)
         doc.build(story)
         return out_path
