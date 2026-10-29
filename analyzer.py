@@ -15,6 +15,69 @@ from reportlab.lib.units import mm
 from reportlab.platypus import (SimpleDocTemplate, Table, TableStyle,
                                 Paragraph, Spacer, PageBreak, Flowable)
 
+CLASS_SUBJECT_FACULTY = {
+    "II/3/A": {
+        "23BS305": ("Discrete Mathematics", "MYTHILI D"),
+        "23MC003": ("Indian Constitution", "BABITHA K"),
+        "23TPS03": ("Quantitative Aptitude and Logical Reasoning - I",
+                    "TAMILSELVAN P"),
+        "23CS301": ("Data Structures", "SARAVANAN G"),
+        "23AD301": ("Artificial Intelligence", "SATHISH KUMAR P"),
+        "23AD303": ("Digital Computer Organization and Architecture",
+                    "LINETT SOPHIA D"),
+    },
+    "II/3/C": {
+        "23BS305": ("Discrete Mathematics", "PADMA PRIYA J"),
+        "23MC003": ("Indian Constitution", "RAMESH BABU"),
+        "23TPS03": ("Quantitative Aptitude and Logical Reasoning - I",
+                    "TAMILSELVAN P"),
+        "23CS301": ("Data Structures", "SARAVANAN G"),
+        "23AD301": ("Artificial Intelligence", "SATHISH KUMAR P"),
+        "23AD303": ("Digital Computer Organization and Architecture",
+                    "LINETT SOPHIA D"),
+    },
+    "III/5/A": {
+        "23AD501": ("Machine Learning", "MAHALINGAM M"),
+        "23AD502": ("Data Exploration and Visualization", "RAMYASRI A"),
+        "23ADX08": ("Java Programming", "PUSHPARAJ P"),
+        "23TPS05": ("Quantitative Aptitude and Logical Reasoning - III",
+                    "MEKALA C"),
+        "23ADX11": ("R Programming", "SENTHIL KUMAR M"),
+    },
+    "III/5/B": {
+        "23AD501": ("Machine Learning", "MOHANAPRIYA B"),
+        "23AD502": ("Data Exploration and Visualization", "VANITHA T"),
+        "23ADX08": ("Java Programming", "PUSHPARAJ P"),
+        "23TPS05": ("Quantitative Aptitude and Logical Reasoning - III",
+                    "MEKALA C"),
+        "23ADX11": ("R Programming", "SENTHIL KUMAR M"),
+    },
+    "III/5/C": {
+        "23AD501": ("Machine Learning", "MOHANAPRIYA B"),
+        "23AD502": ("Data Exploration and Visualization", "VANITHA T"),
+        "23ADX08": ("Java Programming", "PUSHPARAJ P"),
+        "23TPS05": ("Quantitative Aptitude and Logical Reasoning - III",
+                    "MEKALA C"),
+        "23ADX11": ("R Programming", "SENTHIL KUMAR M"),
+    },
+    "IV/7/A": {
+        "23AD701": ("Cloud Computing", "VINODHINI A N"),
+        "23AD702": ("Natural Language Processing", "VINODHINI S"),
+        "23AD703": ("Predictive Analytics", "ARCHANADEVI S"),
+        "23ADX37": ("Edge Computing", "SENTHILKUMAR C"),
+        "23ADX48": ("Management Information System", "NANDHINI V"),
+        "23ECY01": ("Basics of VLSI Design", "VIJI D"),
+    },
+    "IV/7/B": {
+        "23AD701": ("Cloud Computing", "VINODHINI A N"),
+        "23AD702": ("Natural Language Processing", "VINODHINI S"),
+        "23AD703": ("Predictive Analytics", "ARCHANADEVI S"),
+        "23ADX37": ("Edge Computing", "SENTHILKUMAR C"),
+        "23ADX48": ("Management Information System", "NANDHINI V"),
+        "23ECY01": ("Basics of VLSI Design", "VIJI D"),
+    },
+}
+
 
 class CircledMark(Flowable):
     """Display a failed mark with a circle around it in the PDF table."""
@@ -622,7 +685,8 @@ class ResultAnalyzer:
     def export_counselling_pdf(self, output_dir, college_name="",
                                department="", class_info="",
                                academic_year="", branch="",
-                               year_semester="", exam_details=""):
+                               year_semester="", exam_details="",
+                               class_key=""):
         """Export a counselling report for failed and absent subjects."""
         os.makedirs(output_dir, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -698,6 +762,9 @@ class ResultAnalyzer:
         ]
         rows = [[Paragraph(header, header_style) for header in headers]]
         span_ranges = []
+        class_mapping = CLASS_SUBJECT_FACULTY.get(
+            class_key.strip().upper(), {}
+        )
 
         for _, row in self.df.iterrows():
             failed_subjects = []
@@ -721,11 +788,16 @@ class ResultAnalyzer:
             name = str(row.get(self.name_col, "")) if self.name_col else ""
             block_start = len(rows)
             for idx, (subject, weakness, action) in enumerate(failed_subjects):
+                subject_name, faculty_name = class_mapping.get(
+                    str(subject), ("Unknown subject", "-")
+                )
                 rows.append([
                     Paragraph(escape(roll), cell_style) if idx == 0 else "",
                     Paragraph(escape(name), left_cell_style) if idx == 0 else "",
                     Paragraph(
-                        f"{escape(str(subject))}<br/><font size='7'>Faculty: -</font>",
+                        f"{escape(subject_name)}<br/><font size='7'>"
+                        f"Code: {escape(str(subject))}<br/>"
+                        f"Faculty: {escape(faculty_name)}</font>",
                         report_subject_style,
                     ),
                     Paragraph(escape(weakness), report_detail_style),

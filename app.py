@@ -49,6 +49,7 @@ def upload():
     branch = request.form.get("branch", "").strip()
     year_semester = request.form.get("year_semester", "").strip()
     exam_details = request.form.get("exam_details", "").strip()
+    class_key = request.form.get("class_key", "").strip()
 
     if file.filename == "" or not allowed_file(file.filename):
         flash("Invalid file. Use .pdf, .xlsx, .xls, or .csv", "danger")
@@ -73,6 +74,7 @@ def upload():
         session["branch"] = branch
         session["year_semester"] = year_semester
         session["exam_details"] = exam_details
+        session["class_key"] = class_key
 
         save_upload(current_user.id, filename, pass_mark, stats)
         return redirect(url_for("dashboard"))
@@ -209,6 +211,7 @@ def download_counselling_report():
         branch=session.get("branch", ""),
         year_semester=session.get("year_semester", ""),
         exam_details=session.get("exam_details", ""),
+        class_key=session.get("class_key", ""),
     )
     return send_file(out_path, as_attachment=True,
                      download_name=os.path.basename(out_path))
