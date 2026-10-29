@@ -43,12 +43,6 @@ def upload():
 
     file = request.files["file"]
     pass_mark = int(request.form.get("pass_mark", 40))
-    college_name = request.form.get("college_name", "").strip()
-    class_info = request.form.get("class_info", "").strip()
-    academic_year = request.form.get("academic_year", "").strip()
-    branch = request.form.get("branch", "").strip()
-    year_semester = request.form.get("year_semester", "").strip()
-    exam_details = request.form.get("exam_details", "").strip()
     class_key = request.form.get("class_key", "").strip()
 
     if file.filename == "" or not allowed_file(file.filename):
@@ -68,13 +62,12 @@ def upload():
 
         session["filepath"] = filepath
         session["pass_mark"] = pass_mark
-        session["college_name"] = college_name
-        session["class_info"] = class_info
-        session["academic_year"] = academic_year
-        session["branch"] = branch
-        session["year_semester"] = year_semester
-        session["exam_details"] = exam_details
         session["class_key"] = class_key
+        for key in (
+            "college_name", "class_info", "academic_year", "branch",
+            "year_semester", "exam_details",
+        ):
+            session.pop(key, None)
 
         save_upload(current_user.id, filename, pass_mark, stats)
         return redirect(url_for("dashboard"))
@@ -204,13 +197,7 @@ def download_counselling_report():
     analyzer.analyze()
     out_path = analyzer.export_counselling_pdf(
         REPORT_FOLDER,
-        college_name=session.get("college_name", ""),
         department=current_user.department,
-        class_info=session.get("class_info", ""),
-        academic_year=session.get("academic_year", ""),
-        branch=session.get("branch", ""),
-        year_semester=session.get("year_semester", ""),
-        exam_details=session.get("exam_details", ""),
         class_key=session.get("class_key", ""),
     )
     return send_file(out_path, as_attachment=True,
