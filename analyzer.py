@@ -156,6 +156,8 @@ class ResultAnalyzer:
         self.pass_mark = pass_mark
         self.df = None
         self.subjects = []
+        self.display_subjects = []
+        self.ignored_subjects = []
         self.failures_df = None
         self.roll_col = None
         self.name_col = None
@@ -232,7 +234,27 @@ class ResultAnalyzer:
             if str(c).strip().lower().replace("_", " ") in
             {"total", "total mark", "total marks", "mark", "marks in words"}
         )
-        self.subjects = [c for c in columns if c not in excluded]
+        self.display_subjects = [c for c in columns if c not in excluded]
+        if self._is_third_year():
+            self.ignored_subjects = [
+                c for c in self.display_subjects
+                if re.search(r"\bOE\b|23MEY06", str(c), re.IGNORECASE)
+            ]
+        self.display_subjects = [
+            c for c in self.display_subjects if c not in self.ignored_subjects
+        ]
+        self.subjects = list(self.display_subjects)
+
+    def _is_third_year(self):
+        source = f"{os.path.basename(self.filepath)} {self.raw_text}".replace(
+            "_", " "
+        )
+        return bool(re.search(
+            r"\bIII\s+YEAR\b|\b3(?:RD)?\s+YEAR\b|"
+            r"\bYEAR\s*/\s*SEM\s*/\s*SEC\s*:\s*III\b",
+            source,
+            re.IGNORECASE,
+        ))
 
     # ============================================================
     #  PDF PARSER
@@ -273,6 +295,8 @@ class ResultAnalyzer:
                 code = optional_code.group(1).upper()
                 if code not in self.subject_names:
                     self.subject_names.append(code)
+                if self._is_third_year():
+                    self.ignored_subjects.append(code)
                 self.pdf_optional_columns = []
 
         # Extract student rows — multiple strategies
@@ -314,8 +338,12 @@ class ResultAnalyzer:
 
         self.roll_col = "Reg No"
         self.name_col = None
-        self.subjects = [c for c in self.df.columns
-                         if c not in ("S.No", "Reg No", "Total")]
+        self.display_subjects = [
+            c for c in self.df.columns
+            if c not in ("S.No", "Reg No", "Total")
+            and c not in self.ignored_subjects
+        ]
+        self.subjects = list(self.display_subjects)
 
         print(f"OK Roll column: {self.roll_col}")
         print(f"OK Subjects: {self.subjects}\n")
@@ -460,7 +488,7 @@ class ResultAnalyzer:
     # ============================================================
     def _to_numeric(self):
         df = self.df.copy()
-        for sub in self.subjects:
+        for sub in self.display_subjects:
             df[sub] = pd.to_numeric(df[sub], errors="coerce")
         return df
 
@@ -567,9 +595,11 @@ class ResultAnalyzer:
             if not failed_students.empty:
                 rows = []
                 for _, row in failed_students.iterrows():
+                    student_name = row.get(self.name_col, "") if self.name_col else ""
                     rows.append({
                         "S.No": row.get("S.No", ""),
                         "Reg No": row[self.roll_col],
+                        "Name": "" if pd.isna(student_name) else str(student_name),
                         "Marks_Obtained": row[sub],
                     })
                 round_lists[sub] = rows
@@ -606,7 +636,7 @@ class ResultAnalyzer:
         rows = []
         numeric = self._to_numeric()
         for index, row in self.df.iterrows():
-            marks = [row.get(subject, "") for subject in self.subjects]
+            marks = [row.get(subject, "") for subject in self.display_subjects]
             total = sum(
                 float(numeric.iloc[index][subject])
                 for subject in self.subjects
@@ -616,7 +646,10 @@ class ResultAnalyzer:
             rows.append({
                 "S.No": row.get(serial_col, index + 1) if serial_col else index + 1,
                 "Reg No": row.get(self.roll_col, ""),
-                **{subject: mark for subject, mark in zip(self.subjects, marks)},
+                **{
+                    subject: mark for subject, mark in
+                    zip(self.display_subjects, marks)
+                },
                 "Total Mark": total,
                 "MARK": self._number_in_words(total),
                 "Pass Percentage": round(
@@ -664,6 +697,8 @@ class ResultAnalyzer:
             normalized = str(value).strip().upper()
             if normalized in {"OD", "ON DUTY", "ON-DUTY", "AB", "ABSENT", "A"}:
                 return ""
+            if pd.isna(value) or not normalized or normalized == "-":
+                return "-"
             numeric_value = pd.to_numeric(value, errors="coerce")
             if pd.notna(numeric_value) and numeric_value >= self.pass_mark:
                 return "\N{EN DASH}"
@@ -695,7 +730,7 @@ class ResultAnalyzer:
             Paragraph("Name of<br/>Student", header_style),
         ] + [
             Paragraph(str(subject).replace(" & ", " &<br/>"), header_style)
-            for subject in self.subjects
+            for subject in self.display_subjects
         ]
         rows = [headers]
         for _, row in self.df.iterrows():
@@ -706,17 +741,17 @@ class ResultAnalyzer:
                 Paragraph(student_name.replace(" ", " ", 1), name_style),
             ] + [
                 Paragraph(correction_cell(row.get(subject, "")), cell_style)
-                for subject in self.subjects
+                for subject in self.display_subjects
             ])
 
         usable_width = landscape(A4)[0] - doc.leftMargin - doc.rightMargin
         subject_width = (
-            (usable_width - 30 * mm - 50 * mm) / len(self.subjects)
-            if self.subjects else usable_width
+            (usable_width - 30 * mm - 50 * mm) / len(self.display_subjects)
+            if self.display_subjects else usable_width
         )
         column_widths = [30 * mm, 50 * mm] + [
             subject_width
-        ] * len(self.subjects)
+        ] * len(self.display_subjects)
         table = Table(rows, colWidths=column_widths, repeatRows=1,
                       splitByRow=1)
         table.setStyle(TableStyle([
@@ -1012,15 +1047,19 @@ class ResultAnalyzer:
 
         for student, failed_subjects in student_blocks:
             first_row = len(table.rows)
-            for subject, weakness, action in failed_subjects:
+            for subject_index, (subject, weakness, action) in enumerate(
+                failed_subjects
+            ):
                 cells = table.add_row().cells
                 subject_name, faculty_name = class_mapping.get(
                     str(subject), ("Unknown subject", "-")
                 )
-                cells[0].text = str(student.get(self.roll_col, ""))
-                cells[1].text = (
-                    str(student.get(self.name_col, "")) if self.name_col else ""
-                )
+                if subject_index == 0:
+                    cells[0].text = str(student.get(self.roll_col, ""))
+                    cells[1].text = (
+                        str(student.get(self.name_col, ""))
+                        if self.name_col else ""
+                    )
                 cells[2].text = (
                     f"{subject_name}\nCode: {subject}\nFaculty: {faculty_name}"
                 )
@@ -1082,7 +1121,9 @@ class ResultAnalyzer:
         section.right_margin = Inches(0.45)
         document.add_heading("Student Detailed Correction Report", level=1)
 
-        headers = ["Roll No", "Name of Student"] + [str(s) for s in self.subjects]
+        headers = ["Roll No", "Name of Student"] + [
+            str(s) for s in self.display_subjects
+        ]
         table = document.add_table(rows=1, cols=len(headers))
         table.style = "Table Grid"
         table.autofit = True
@@ -1099,11 +1140,15 @@ class ResultAnalyzer:
             name = row.get(self.name_col, "") if self.name_col else ""
             cells[0].text = str(row.get(self.roll_col, ""))
             cells[1].text = "" if pd.isna(name) else str(name)
-            for index, subject in enumerate(self.subjects, start=2):
+            for index, subject in enumerate(self.display_subjects, start=2):
                 value = row.get(subject, "")
                 normalized = str(value).strip().upper()
                 number = pd.to_numeric(value, errors="coerce")
-                if normalized in {"OD", "ON DUTY", "ON-DUTY", "AB", "ABSENT", "A"}:
+                if subject in self.ignored_subjects:
+                    rendered = (
+                        "-" if pd.isna(value) or not normalized else str(value)
+                    )
+                elif normalized in {"OD", "ON DUTY", "ON-DUTY", "AB", "ABSENT", "A"}:
                     rendered = ""
                 elif pd.notna(number) and number >= self.pass_mark:
                     rendered = "\N{EN DASH}"
@@ -1207,10 +1252,11 @@ class ResultAnalyzer:
         document.add_heading("Subject-wise Round Lists", level=2)
         for subject, students in self.generate_round_lists().items():
             document.add_heading(str(subject), level=3)
-            round_table = document.add_table(rows=1, cols=3)
+            round_table = document.add_table(rows=1, cols=4)
             round_table.style = "Table Grid"
             for cell, label in zip(
-                round_table.rows[0].cells, ["S.No", "Roll No", "Marks Obtained"]
+                round_table.rows[0].cells,
+                ["S.No", "Roll No", "Name", "Marks Obtained"],
             ):
                 cell.text = label
                 cell.paragraphs[0].runs[0].bold = True
@@ -1218,7 +1264,8 @@ class ResultAnalyzer:
                 cells = round_table.add_row().cells
                 cells[0].text = str(student.get("S.No", ""))
                 cells[1].text = str(student.get("Reg No", ""))
-                cells[2].text = str(student.get("Marks_Obtained", ""))
+                cells[2].text = student.get("Name", "")
+                cells[3].text = str(student.get("Marks_Obtained", ""))
 
         document.save(out_path)
         return out_path
@@ -1346,7 +1393,7 @@ class ResultAnalyzer:
             rendered = []
             for column in mark_headers:
                 value = row[column]
-                if column in self.subjects:
+                if column in self.display_subjects and column not in self.ignored_subjects:
                     numeric_value = pd.to_numeric(value, errors="coerce")
                     is_absent = str(value).strip().upper() in {"AB", "ABSENT", "A"}
                     if is_absent or pd.isna(numeric_value) or numeric_value < self.pass_mark:
@@ -1357,7 +1404,7 @@ class ResultAnalyzer:
         usable_width = landscape(A4)[0] - doc.leftMargin - doc.rightMargin
         mark_widths = (
             [14 * mm, 38 * mm]
-            + [20 * mm] * len(self.subjects)
+            + [20 * mm] * len(self.display_subjects)
             + [22 * mm, 34 * mm, 24 * mm]
         )
         scale = usable_width / sum(mark_widths)
@@ -1389,11 +1436,15 @@ class ResultAnalyzer:
             ))
             story.append(Spacer(1, 2 * mm))
 
-            data = [["#", "S.No", "Reg No", "Marks Obtained"]]
+            data = [["#", "S.No", "Reg No", "Name", "Marks Obtained"]]
             for i, s in enumerate(students, 1):
-                data.append([i, s.get("S.No", ""), s["Reg No"], s["Marks_Obtained"]])
+                marks = s["Marks_Obtained"]
+                data.append([
+                    i, s.get("S.No", ""), s["Reg No"], s.get("Name", ""),
+                    "-" if pd.isna(marks) else marks,
+                ])
 
-            t = Table(data, colWidths=[15 * mm, 20 * mm, 65 * mm, 40 * mm],
+            t = Table(data, colWidths=[15 * mm, 20 * mm, 55 * mm, 75 * mm, 40 * mm],
                       repeatRows=1)
             t.setStyle(TableStyle([
                 ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1e3a8a")),
@@ -1401,7 +1452,7 @@ class ResultAnalyzer:
                 ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
                 ("FONTSIZE", (0, 0), (-1, -1), 9),
                 ("ALIGN", (0, 0), (0, -1), "CENTER"),
-                ("ALIGN", (3, 0), (3, -1), "CENTER"),
+                ("ALIGN", (4, 0), (4, -1), "CENTER"),
                 ("GRID", (0, 0), (-1, -1), 0.4, colors.grey),
                 ("ROWBACKGROUNDS", (0, 1), (-1, -1),
                  [colors.white, colors.HexColor("#fef2f2")]),

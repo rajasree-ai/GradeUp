@@ -21,7 +21,7 @@
             </div>
             <table>
                 <thead>
-                    <tr><th>#</th><th>S.No</th><th>Reg No</th><th>Marks Obtained</th></tr>
+                    <tr><th>#</th><th>S.No</th><th>Reg No</th><th>Name</th><th>Marks Obtained</th></tr>
                 </thead>
                 <tbody>
                     {% for r in rows %}
@@ -29,6 +29,7 @@
                         <td>{{ loop.index }}</td>
                         <td>{{ r.get('S.No', '') }}</td>
                         <td><strong>{{ r['Reg No'] }}</strong></td>
+                        <td>{{ r.get('Name', '') }}</td>
                         <td><span class="badge badge-fail">{{ r['Marks_Obtained'] }}</span></td>
                     </tr>
                     {% endfor %}
