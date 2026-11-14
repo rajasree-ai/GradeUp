@@ -1,4 +1,5 @@
 import os
+from functools import lru_cache
 from flask import (Flask, render_template, request, redirect,
                    url_for, flash, send_file, session)
 from flask_login import login_required, current_user
@@ -22,6 +23,22 @@ os.makedirs(REPORT_FOLDER, exist_ok=True)
 
 init_db()
 init_auth(app)
+
+
+@lru_cache(maxsize=8)
+def _get_analyzer(filepath, pass_mark, modified_ns, file_size):
+    """Analyze each uploaded file once while it remains unchanged."""
+    analyzer = ResultAnalyzer(filepath, pass_mark)
+    analyzer.load_data()
+    analyzer.analyze()
+    return analyzer
+
+
+def get_analyzer(filepath, pass_mark):
+    stat = os.stat(filepath)
+    return _get_analyzer(
+        filepath, pass_mark, stat.st_mtime_ns, stat.st_size
+    )
 
 
 def allowed_file(fn):
@@ -55,9 +72,7 @@ def upload():
     file.save(filepath)
 
     try:
-        analyzer = ResultAnalyzer(filepath, pass_mark)
-        analyzer.load_data()
-        analyzer.analyze()
+        analyzer = get_analyzer(filepath, pass_mark)
         stats = analyzer.get_statistics()
 
         session["filepath"] = filepath
@@ -88,9 +103,7 @@ def dashboard():
         flash("Please upload a file first.", "warning")
         return redirect(url_for("index"))
 
-    analyzer = ResultAnalyzer(filepath, pass_mark)
-    analyzer.load_data()
-    analyzer.analyze()
+    analyzer = get_analyzer(filepath, pass_mark)
     stats = analyzer.get_statistics()
     return render_template("dashboard.html", stats=stats)
 
@@ -103,9 +116,7 @@ def failures():
     if not filepath:
         return redirect(url_for("index"))
 
-    analyzer = ResultAnalyzer(filepath, pass_mark)
-    analyzer.load_data()
-    analyzer.analyze()
+    analyzer = get_analyzer(filepath, pass_mark)
 
     student_wise = analyzer.get_student_wise_failures().to_dict(orient="records")
     subject_wise = analyzer.get_subject_wise_failures()
@@ -122,9 +133,7 @@ def round_lists():
     if not filepath:
         return redirect(url_for("index"))
 
-    analyzer = ResultAnalyzer(filepath, pass_mark)
-    analyzer.load_data()
-    analyzer.analyze()
+    analyzer = get_analyzer(filepath, pass_mark)
     lists = analyzer.generate_round_lists()
     return render_template("round_lists.html", round_lists=lists)
 
@@ -137,9 +146,7 @@ def download_report():
     if not filepath:
         return redirect(url_for("index"))
 
-    analyzer = ResultAnalyzer(filepath, pass_mark)
-    analyzer.load_data()
-    analyzer.analyze()
+    analyzer = get_analyzer(filepath, pass_mark)
     out_path = analyzer.export_report(REPORT_FOLDER)
     return send_file(out_path, as_attachment=True)
 
@@ -152,9 +159,7 @@ def download_pdf():
     if not filepath:
         return redirect(url_for("index"))
 
-    analyzer = ResultAnalyzer(filepath, pass_mark)
-    analyzer.load_data()
-    analyzer.analyze()
+    analyzer = get_analyzer(filepath, pass_mark)
     out_path = analyzer.export_pdf(
         REPORT_FOLDER,
         college_name=session.get("college_name", ""),
@@ -172,9 +177,7 @@ def download_student_correction_pdf():
     if not filepath:
         return redirect(url_for("index"))
 
-    analyzer = ResultAnalyzer(filepath, pass_mark)
-    analyzer.load_data()
-    analyzer.analyze()
+    analyzer = get_analyzer(filepath, pass_mark)
     out_path = analyzer.export_student_correction_pdf(
         REPORT_FOLDER,
         college_name=session.get("college_name", ""),
@@ -192,9 +195,7 @@ def download_counselling_report():
     if not filepath:
         return redirect(url_for("index"))
 
-    analyzer = ResultAnalyzer(filepath, pass_mark)
-    analyzer.load_data()
-    analyzer.analyze()
+    analyzer = get_analyzer(filepath, pass_mark)
     out_path = analyzer.export_counselling_pdf(
         REPORT_FOLDER,
         department=current_user.department,
@@ -212,9 +213,7 @@ def download_counselling_word():
     if not filepath:
         return redirect(url_for("index"))
 
-    analyzer = ResultAnalyzer(filepath, pass_mark)
-    analyzer.load_data()
-    analyzer.analyze()
+    analyzer = get_analyzer(filepath, pass_mark)
     out_path = analyzer.export_counselling_docx(
         REPORT_FOLDER,
         class_key=session.get("class_key", ""),
@@ -238,9 +237,7 @@ def download_report_word():
     if not filepath:
         return redirect(url_for("index"))
 
-    analyzer = ResultAnalyzer(filepath, pass_mark)
-    analyzer.load_data()
-    analyzer.analyze()
+    analyzer = get_analyzer(filepath, pass_mark)
     out_path = analyzer.export_full_report_docx(REPORT_FOLDER)
     return send_file(
         out_path,
@@ -261,9 +258,7 @@ def download_student_correction_word():
     if not filepath:
         return redirect(url_for("index"))
 
-    analyzer = ResultAnalyzer(filepath, pass_mark)
-    analyzer.load_data()
-    analyzer.analyze()
+    analyzer = get_analyzer(filepath, pass_mark)
     out_path = analyzer.export_correction_docx(REPORT_FOLDER)
     return send_file(
         out_path,

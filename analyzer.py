@@ -4,6 +4,8 @@ Handles consolidated format like: S.No | RegNo | Subj1...SubjN | Total
 """
 import os
 import re
+import shutil
+from io import BytesIO
 from datetime import datetime
 from xml.sax.saxutils import escape
 import pdfplumber
@@ -13,7 +15,7 @@ from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.platypus import (SimpleDocTemplate, Table, TableStyle,
-                                Paragraph, Spacer, PageBreak, Flowable)
+                                Paragraph, Spacer, PageBreak, Flowable, Image)
 
 CLASS_SUBJECT_FACULTY = {
     "II/3/A": {
@@ -165,6 +167,7 @@ class ResultAnalyzer:
         self.pdf_optional_columns = []
         self.raw_text = ""
         self._numeric_df = None
+        self._source_rotation = 0
 
     # ============================================================
     #  LOADER
@@ -301,25 +304,40 @@ class ResultAnalyzer:
 
         # Extract student rows — multiple strategies
         students = self._extract_student_rows(full_text)
+        if not students:
+            ocr_text = self._extract_pdf_text_with_ocr()
+            if ocr_text:
+                self.raw_text = f"{full_text}\n{ocr_text}".strip()
+                self.subject_names = []
+                self.pdf_optional_columns = []
+                self._extract_subject_headers(ocr_text)
+                self._extract_subjects_from_summary(ocr_text)
+                students = self._extract_student_rows(ocr_text)
         print(f"=== DETECTED {len(students)} STUDENT ROWS ===\n")
 
         if not students:
             raise ValueError(
-                "No student rows detected in PDF. "
-                "It may be a scanned image (not text-based), "
-                "or format is very different. Check terminal debug output."
+                "No student rows detected in PDF, including OCR. "
+                "Check that the PDF contains a clear mark-list table."
             )
 
         # Pad all students to same subject count
         max_subj = max(len(s["marks"]) for s in students)
-        cols = ["S.No", "Reg No"] + [f"Subject{i+1}" for i in range(max_subj)] + ["Total"]
+        has_names = any(s.get("name") for s in students)
+        cols = ["S.No", "Reg No"]
+        if has_names:
+            cols.append("Name")
+        cols += [f"Subject{i+1}" for i in range(max_subj)] + ["Total"]
 
         rows = []
         for s in students:
             marks = list(s["marks"])
             while len(marks) < max_subj:
                 marks.append(None)
-            rows.append([s["sno"], s["regno"]] + marks + [s["total"]])
+            row = [s["sno"], s["regno"]]
+            if has_names:
+                row.append(s.get("name", ""))
+            rows.append(row + marks + [s["total"]])
 
         self.df = pd.DataFrame(rows, columns=cols)
 
@@ -337,16 +355,73 @@ class ResultAnalyzer:
             self.df.rename(columns=rename_map, inplace=True)
 
         self.roll_col = "Reg No"
-        self.name_col = None
+        self.name_col = "Name" if "Name" in self.df.columns else None
         self.display_subjects = [
             c for c in self.df.columns
-            if c not in ("S.No", "Reg No", "Total")
+            if c not in ("S.No", "Reg No", "Name", "Total")
             and c not in self.ignored_subjects
         ]
         self.subjects = list(self.display_subjects)
 
         print(f"OK Roll column: {self.roll_col}")
         print(f"OK Subjects: {self.subjects}\n")
+
+    def _extract_pdf_text_with_ocr(self):
+        """OCR image-only PDF pages so scanned mark lists can be analyzed."""
+        try:
+            import pypdfium2 as pdfium
+            import pytesseract
+        except ImportError as exc:
+            raise ValueError(
+                "This PDF is image-only. OCR support requires pypdfium2 and "
+                "pytesseract to be installed."
+            ) from exc
+
+        if not shutil.which("tesseract"):
+            for candidate in (
+                r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+                r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+            ):
+                if os.path.isfile(candidate):
+                    pytesseract.pytesseract.tesseract_cmd = candidate
+                    break
+
+        ocr_pages = []
+        with pdfium.PdfDocument(self.filepath) as document:
+            for page_index in range(len(document)):
+                page = document[page_index]
+                bitmap = page.render(scale=3.0)
+                image = bitmap.to_pil()
+                try:
+                    candidates = [
+                        pytesseract.image_to_string(
+                            image.rotate(angle, expand=True)
+                        )
+                        for angle in (0, 90, 180, 270)
+                    ]
+                    scores = [
+                        (
+                            len(re.findall(r"\bS\.?\s*No\b", text, re.I))
+                            + len(re.findall(r"\bReg\s*No\b", text, re.I))
+                            + len(re.findall(
+                                r"\b[A-Z]{2}\d{2}[A-Z]{2}\d{2,}\b",
+                                text,
+                                re.I,
+                            ))
+                        )
+                        for text in candidates
+                    ]
+                    best_index = max(range(len(scores)), key=scores.__getitem__)
+                    self._source_rotation = (0, 90, 180, 270)[best_index]
+                    ocr_pages.append(candidates[best_index])
+                except pytesseract.TesseractNotFoundError as exc:
+                    raise ValueError(
+                        "This PDF is image-only. Install the Tesseract OCR "
+                        "engine before uploading scanned PDFs."
+                    ) from exc
+                bitmap.close()
+                page.close()
+        return "\n".join(ocr_pages)
 
     def _extract_subject_headers(self, text):
         """Read subject codes from the consolidated table header when available."""
@@ -356,6 +431,10 @@ class ResultAnalyzer:
         )
         match = header_re.search(text)
         if not match:
+            code_matches = re.findall(
+                r"\b\d{2}[A-Z]{2,4}\d{2,3}\b", text, re.IGNORECASE
+            )
+            self.subject_names = list(dict.fromkeys(code_matches))
             return
         headers = match.group(1).split()
         self.subject_names = [
@@ -386,7 +465,7 @@ class ResultAnalyzer:
             if name and len(name) < 80 and name not in subjects:
                 subjects.append(name)
 
-        if subjects:
+        if subjects and not self.subject_names:
             self.subject_names = subjects[:10]
         print(f"=== DETECTED SUBJECTS: {self.subject_names} ===\n")
 
@@ -440,9 +519,43 @@ class ResultAnalyzer:
                     "total": int(total),
                 })
 
+        # OCR format: S.No, alphanumeric register number, student name,
+        # followed by one mark token per subject and no total column.
+        if not students and self.subject_names:
+            ocr_row_re = re.compile(
+                r"^\s*(\d{1,3})\s+([A-Z]{2}\d{2}[A-Z]{2}\d{2,})\s+(.+?)\s*$",
+                re.IGNORECASE | re.MULTILINE,
+            )
+            mark_token_re = re.compile(
+                r"^(?:AB|ABSENT|A|-|\d{1,3})$", re.IGNORECASE
+            )
+            for match in ocr_row_re.finditer(text):
+                sno, regno, remainder = match.groups()
+                tokens = remainder.split()
+                mark_start = len(tokens)
+                while mark_start and mark_token_re.fullmatch(
+                    tokens[mark_start - 1]
+                ):
+                    mark_start -= 1
+                mark_tokens = tokens[mark_start:]
+                if len(mark_tokens) < len(self.subject_names):
+                    continue
+                mark_tokens = mark_tokens[-len(self.subject_names):]
+                name = " ".join(tokens[:mark_start]).strip()
+                cleaned = self._clean_marks(mark_tokens)
+                numeric_marks = pd.to_numeric(cleaned, errors="coerce")
+                total = int(pd.Series(numeric_marks).dropna().sum())
+                students.append({
+                    "sno": sno,
+                    "regno": regno,
+                    "name": name,
+                    "marks": cleaned,
+                    "total": total,
+                })
+
         # ---------- Strategy 2: RegNo-anchored fallback ----------
         if not students:
-            print("⚠️  Strategy 1 failed — trying RegNo-anchor strategy...")
+            print("Strategy 1 failed - trying RegNo-anchor strategy...")
             for match in re.finditer(r"\b(\d{8,20})\b", text):
                 regno = match.group(1)
                 if regno in seen_regnos:
@@ -704,9 +817,11 @@ class ResultAnalyzer:
                 return "\N{EN DASH}"
             return ""
 
-        story = [Paragraph(
+        story = []
+        self._add_pdf_source_header(story, info_style)
+        story.append(Paragraph(
             college_name or "Student Detailed Correction Report", title_style
-        )]
+        ))
         if college_name:
             story.append(Paragraph("Student Detailed Correction Report",
                                    info_style))
@@ -725,11 +840,19 @@ class ResultAnalyzer:
         name_style = ParagraphStyle(
             "CorrectionName", parent=cell_style, alignment=0,
         )
+        correction_mapping = _class_subject_mapping(
+            "", class_info, self.raw_text, self.subjects
+        )
         headers = [
             Paragraph("Roll No", header_style),
             Paragraph("Name of<br/>Student", header_style),
         ] + [
-            Paragraph(str(subject).replace(" & ", " &<br/>"), header_style)
+            Paragraph(
+                f"{str(subject)}<br/><font size='7'>"
+                f"{escape(correction_mapping.get(subject, ('', ''))[0])}"
+                "</font>",
+                header_style,
+            )
             for subject in self.display_subjects
         ]
         rows = [headers]
@@ -826,10 +949,12 @@ class ResultAnalyzer:
             fontSize=8, leading=10, alignment=0, spaceAfter=1,
         )
 
-        story = [Paragraph(
+        story = []
+        self._add_pdf_source_header(story, header_style)
+        story.append(Paragraph(
             f"<b>{escape(class_info or 'CAT-II - II Year A Section')}</b>",
             header_style,
-        )]
+        ))
         metadata = [
             ["Branch", branch or department or "-"],
             ["Year / Semester", year_semester or "-"],
@@ -968,6 +1093,7 @@ class ResultAnalyzer:
         section.bottom_margin = Inches(0.55)
         section.left_margin = Inches(0.55)
         section.right_margin = Inches(0.55)
+        self._add_word_source_header(document)
 
         class_match = re.search(
             r"Year/Sem/Sec\s*:\s*([IVX]+)\s*/\s*(\d+)\s*/\s*([A-Z])",
@@ -1119,10 +1245,17 @@ class ResultAnalyzer:
         section.bottom_margin = Inches(0.45)
         section.left_margin = Inches(0.45)
         section.right_margin = Inches(0.45)
+        self._add_word_source_header(document)
         document.add_heading("Student Detailed Correction Report", level=1)
 
+        correction_mapping = _class_subject_mapping(
+            "", "", self.raw_text, self.subjects
+        )
         headers = ["Roll No", "Name of Student"] + [
-            str(s) for s in self.display_subjects
+            f"{s} - {correction_mapping.get(s, ('', ''))[0]}"
+            if correction_mapping.get(s, ("", ""))[0]
+            else str(s)
+            for s in self.display_subjects
         ]
         table = document.add_table(rows=1, cols=len(headers))
         table.style = "Table Grid"
@@ -1190,6 +1323,7 @@ class ResultAnalyzer:
         section.left_margin = Inches(0.5)
         section.right_margin = Inches(0.5)
 
+        self._add_word_source_header(document)
         title = document.add_heading("Student Result Analysis Report", level=1)
         title.alignment = WD_ALIGN_PARAGRAPH.CENTER
         branch = self._branch_from_source()
@@ -1233,7 +1367,11 @@ class ResultAnalyzer:
 
         document.add_heading("Consolidated Mark List", level=2)
         consolidated = self.consolidated_mark_list()
-        mark_headers = [str(column) for column in consolidated.columns]
+        mark_headers = [
+            self._subject_label(column)
+            if column in self.subjects else str(column)
+            for column in consolidated.columns
+        ]
         marks_table = document.add_table(rows=1, cols=len(mark_headers))
         marks_table.style = "Table Grid"
         for cell, label in zip(marks_table.rows[0].cells, mark_headers):
@@ -1251,7 +1389,7 @@ class ResultAnalyzer:
 
         document.add_heading("Subject-wise Round Lists", level=2)
         for subject, students in self.generate_round_lists().items():
-            document.add_heading(str(subject), level=3)
+            document.add_heading(self._subject_label(subject), level=3)
             round_table = document.add_table(rows=1, cols=4)
             round_table.style = "Table Grid"
             for cell, label in zip(
@@ -1278,6 +1416,184 @@ class ResultAnalyzer:
         )
         return match.group(1).strip() if match else "-"
 
+    def _source_header_lines(self):
+        """Return the identifying header text found in the uploaded mark list."""
+        lines = [line.strip() for line in self.raw_text.splitlines() if line.strip()]
+        college = next(
+            (line for line in lines if "ENGINEERING COLLEGE" in line.upper()),
+            "ERODE SENGUNTHAR ENGINEERING COLLEGE",
+        )
+        department = next(
+            (
+                line for line in lines
+                if "DEPARTMENT OF" in line.upper()
+                or line.upper().startswith("B.TECH -")
+            ),
+            "",
+        )
+        class_match = re.search(
+            r"(CAT\s*[-IIVX\d]+\s*[-–—]\s*[IVX]+\s*Year\s*[A-Z]?\s*SEC)",
+            self.raw_text,
+            re.IGNORECASE,
+        )
+        class_line = class_match.group(1).strip() if class_match else ""
+        return [line for line in (college, department, class_line) if line]
+
+    def _subject_label(self, subject):
+        mapping = _class_subject_mapping(
+            "", "", self.raw_text, self.subjects
+        )
+        name = mapping.get(subject, ("", ""))[0]
+        return f"{subject} - {name}" if name and name != subject else str(subject)
+
+    def _source_logo_images(self):
+        """Return the configured college logos, with PDF extraction as fallback."""
+        logo_paths = [
+            os.path.join(os.path.dirname(__file__), "static", "college_logo.png"),
+            os.path.join(os.path.dirname(__file__), "static", "naac_logo.png"),
+            os.path.join(os.path.dirname(__file__), "static", "innovation_logo.png"),
+        ]
+        if all(os.path.isfile(path) for path in logo_paths):
+            streams = []
+            for path in logo_paths:
+                with open(path, "rb") as logo_file:
+                    streams.append(BytesIO(logo_file.read()))
+            return streams
+
+        try:
+            import pypdfium2 as pdfium
+        except ImportError:
+            return []
+
+        with pdfium.PdfDocument(self.filepath) as document:
+            if not len(document):
+                return []
+            page = document[0]
+            image = page.render(scale=1.5).to_pil()
+            page.close()
+        if self._source_rotation:
+            image = image.rotate(self._source_rotation, expand=True)
+        width, height = image.size
+        top = image.crop((0, 0, width, int(height * 0.35)))
+        crops = [
+            top.crop((0, 0, int(width * 0.24), top.height)),
+            top.crop((int(width * 0.76), 0, width, top.height)),
+        ]
+        result = []
+        for crop in crops:
+            stream = BytesIO()
+            crop.save(stream, format="PNG")
+            stream.seek(0)
+            result.append(stream)
+        return result
+
+    def _add_pdf_source_header(self, story, style):
+        logos = self._source_logo_images()
+        header_style = ParagraphStyle(
+            "BrandedPdfHeader", parent=style, alignment=1,
+            textColor=colors.white, fontName="Helvetica-Bold",
+            fontSize=8.5, leading=10,
+        )
+        college_style = ParagraphStyle(
+            "BrandedPdfCollege", parent=header_style,
+            fontName="Helvetica-Bold", fontSize=14, leading=15,
+        )
+        address_style = ParagraphStyle(
+            "BrandedPdfAddress", parent=header_style,
+            fontName="Helvetica", fontSize=7.5, leading=8.5,
+        )
+        center = [
+            Paragraph("ERODE SENGUNTHAR<br/>ENGINEERING COLLEGE",
+                      college_style),
+            Paragraph("(An Autonomous Institution)", header_style),
+            Paragraph(
+                "Approved by AICTE, New Delhi, Permanently Affiliated to "
+                "Anna University - Chennai,<br/>"
+                "Accredited by National Board of Accreditation (NBA), New "
+                "Delhi &amp;<br/>"
+                "National Assessment and Accreditation Council (NAAC), "
+                "Bangalore with 'A' Grade",
+                address_style,
+            ),
+            Paragraph("PERUNDURAI - 638 057, TAMILNADU, INDIA.",
+                      header_style),
+        ]
+        if not logos:
+            story.extend(center)
+            return
+
+        right_logos = Table([
+            [Image(logos[1], width=18 * mm, height=18 * mm)],
+            [Image(logos[2], width=24 * mm, height=12 * mm)],
+        ], colWidths=[28 * mm])
+        header = Table([[
+            Image(logos[0], width=27 * mm, height=27 * mm),
+            center,
+            right_logos,
+        ]], colWidths=[31 * mm, 124 * mm, 31 * mm], rowHeights=[31 * mm])
+        header.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#282828")),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 2),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 2),
+            ("TOPPADDING", (0, 0), (-1, -1), 2),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+        ]))
+        story.append(header)
+
+    def _add_word_source_header(self, document):
+        from docx.enum.text import WD_ALIGN_PARAGRAPH
+        from docx.shared import Pt
+        from docx.shared import Inches
+        from docx.shared import RGBColor
+        from docx.oxml import OxmlElement
+        from docx.oxml.ns import qn
+
+        logos = self._source_logo_images()
+        table = document.add_table(rows=1, cols=3)
+        table.autofit = False
+        cells = table.rows[0].cells
+        cells[0].width = Inches(1.0)
+        cells[1].width = Inches(7.0)
+        cells[2].width = Inches(1.0)
+        for cell in cells:
+            shading = OxmlElement("w:shd")
+            shading.set(qn("w:fill"), "282828")
+            cell._tc.get_or_add_tcPr().append(shading)
+
+        if logos:
+            left = cells[0].paragraphs[0]
+            left.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            left.add_run().add_picture(logos[0], width=Inches(0.7))
+            right = cells[2].paragraphs[0]
+            right.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            right.add_run().add_picture(logos[1], width=Inches(0.55))
+            right.add_run().add_break()
+            right.add_run().add_picture(logos[2], width=Inches(0.8))
+
+        center = cells[1].paragraphs[0]
+        center.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        header_lines = [
+            ("ERODE SENGUNTHAR", 16, True),
+            ("ENGINEERING COLLEGE", 14, True),
+            ("(An Autonomous Institution)", 9, True),
+            ("Approved by AICTE, New Delhi, Permanently Affiliated to "
+             "Anna University - Chennai,", 8, False),
+            ("Accredited by National Board of Accreditation (NBA), New Delhi &",
+             8, False),
+            ("National Assessment and Accreditation Council (NAAC), Bangalore "
+             "with 'A' Grade", 8, False),
+            ("PERUNDURAI - 638 057, TAMILNADU, INDIA.", 10, True),
+        ]
+        for index, (text, size, bold) in enumerate(header_lines):
+            paragraph = center if index == 0 else cells[1].add_paragraph()
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            run = paragraph.add_run(text)
+            run.bold = bold
+            run.font.color.rgb = RGBColor(255, 255, 255)
+            run.font.size = Pt(size)
+
     # ============================================================
     #  PDF EXPORT
     # ============================================================
@@ -1292,7 +1608,6 @@ class ResultAnalyzer:
             topMargin=12 * mm, bottomMargin=12 * mm
         )
         styles = getSampleStyleSheet()
-        story = []
 
         title_style = ParagraphStyle(
             "TitleStyle", parent=styles["Title"],
@@ -1316,11 +1631,14 @@ class ResultAnalyzer:
             "MarkHeaderStyle", parent=mark_cell_style,
             fontName="Helvetica-Bold", textColor=colors.white,
         )
+        story = []
+        self._add_pdf_source_header(story, sub_style)
 
         stats = self.get_statistics()
 
         # Header
-        story.append(Paragraph(college_name or "College Name", title_style))
+        if college_name:
+            story.append(Paragraph(college_name, title_style))
         story.append(Paragraph("CONSOLIDATED ROUND LIST REPORT", sub_style))
         if class_info:
             story.append(Paragraph(class_info, sub_style))
@@ -1362,7 +1680,7 @@ class ResultAnalyzer:
             total_sub = p + f
             pct = round((p / total_sub) * 100, 1) if total_sub else 0
             rows.append([
-                str(sub)[:30], p, f,
+                self._subject_label(sub)[:45], p, f,
                 stats["subject_avg"][sub], stats["subject_max"][sub],
                 f"{pct}%",
             ])
@@ -1387,8 +1705,14 @@ class ResultAnalyzer:
         story.append(Paragraph("Consolidated Mark List", section_style))
         consolidated = self.consolidated_mark_list()
         mark_headers = list(consolidated.columns)
-        mark_rows = [[Paragraph(str(header), mark_header_style)
-                      for header in mark_headers]]
+        mark_rows = [[
+            Paragraph(
+                self._subject_label(header)
+                if header in self.subjects else str(header),
+                mark_header_style,
+            )
+            for header in mark_headers
+        ]]
         for _, row in consolidated.iterrows():
             rendered = []
             for column in mark_headers:
@@ -1429,7 +1753,10 @@ class ResultAnalyzer:
         story.append(Spacer(1, 3 * mm))
 
         for sub, students in self.generate_round_lists().items():
-            story.append(Paragraph(f"Subject: {sub}", styles["Heading3"]))
+            story.append(Paragraph(
+                f"Subject: {escape(self._subject_label(sub))}",
+                styles["Heading3"],
+            ))
             story.append(Paragraph(
                 f"Total failed: {len(students)} | Pass mark: {self.pass_mark}",
                 styles["Normal"]
@@ -1498,20 +1825,65 @@ class ResultAnalyzer:
         out_path = os.path.join(output_dir, f"result_report_{timestamp}.xlsx")
 
         stats_df = pd.DataFrame(
-            list(self.get_statistics()["subject_fail_counts"].items()),
+            [
+                (self._subject_label(subject), count)
+                for subject, count in
+                self.get_statistics()["subject_fail_counts"].items()
+            ],
             columns=["Subject", "Fail_Count"]
         )
         with pd.ExcelWriter(out_path, engine="openpyxl") as writer:
-            self.consolidated_mark_list().to_excel(
-                writer, sheet_name="Consolidated_Marks", index=False
+            consolidated = self.consolidated_mark_list().rename(
+                columns={
+                    subject: self._subject_label(subject)
+                    for subject in self.subjects
+                }
             )
+            consolidated.to_excel(
+                writer, sheet_name="Consolidated_Marks", index=False,
+                startrow=4
+            )
+            worksheet = writer.sheets["Consolidated_Marks"]
+            from openpyxl.styles import Font, PatternFill, Alignment
+            branded_fill = PatternFill("solid", fgColor="282828")
+            for row in worksheet.iter_rows(min_row=1, max_row=4,
+                                          min_col=1, max_col=11):
+                for cell in row:
+                    cell.fill = branded_fill
+            worksheet.merge_cells("D1:I4")
+            worksheet["D1"] = (
+                "ERODE SENGUNTHAR\nENGINEERING COLLEGE\n"
+                "(An Autonomous Institution)\n"
+                "Approved by AICTE, New Delhi, Permanently Affiliated to "
+                "Anna University - Chennai,\n"
+                "Accredited by NBA, New Delhi & NAAC, Bangalore with 'A' Grade\n"
+                "PERUNDURAI - 638 057, TAMILNADU, INDIA."
+            )
+            worksheet["D1"].font = Font(name="Arial", bold=True, size=11,
+                                        color="FFFFFF")
+            worksheet["D1"].alignment = Alignment(
+                horizontal="center", vertical="center", wrap_text=True
+            )
+            try:
+                from openpyxl.drawing.image import Image as ExcelImage
+                logo_cells = ("A1", "J1", "J5")
+                for index, stream in enumerate(self._source_logo_images()):
+                    stream.seek(0)
+                    logo = ExcelImage(stream)
+                    logo.width = 70
+                    logo.height = 70
+                    worksheet.add_image(logo, logo_cells[index])
+            except ImportError:
+                pass
             self.get_student_wise_failures().to_excel(
                 writer, sheet_name="Student_Wise_Failures", index=False
             )
             stats_df.to_excel(writer, sheet_name="Subject_Stats", index=False)
             for sub, rows in self.generate_round_lists().items():
                 sheet_name = f"Round_{sub}"[:31]
-                pd.DataFrame(rows).to_excel(
+                round_df = pd.DataFrame(rows)
+                round_df.insert(0, "Subject", self._subject_label(sub))
+                round_df.to_excel(
                     writer, sheet_name=sheet_name, index=False
                 )
         return out_path
