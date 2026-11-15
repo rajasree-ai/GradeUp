@@ -19,24 +19,34 @@ from reportlab.platypus import (SimpleDocTemplate, Table, TableStyle,
 
 CLASS_SUBJECT_FACULTY = {
     "II/3/A": {
-        "23BS305": ("Discrete Mathematics", "MYTHILI D"),
-        "23MC003": ("Indian Constitution", "BABITHA K"),
+        "23BS305": ("Discrete Mathematics", "Mythili D"),
+        "23MC003": ("Indian Constitution", "Ramesh Babu"),
         "23TPS03": ("Quantitative Aptitude and Logical Reasoning - I",
-                    "TAMILSELVAN P"),
-        "23CS301": ("Data Structures", "SARAVANAN G"),
-        "23AD301": ("Artificial Intelligence", "SATHISH KUMAR P"),
+                    "Tamilselvan P"),
+        "23CS301": ("Data Structures", "Saravanan G"),
+        "23AD301": ("Artificial Intelligence", "Sathish Kumar P"),
         "23AD303": ("Digital Computer Organization and Architecture",
-                    "LINETT SOPHIA D"),
+                    "Gowtham C"),
+    },
+    "II/3/B": {
+        "23BS305": ("Discrete Mathematics", "Mythili D"),
+        "23MC003": ("Indian Constitution", "Ramesh Babu"),
+        "23TPS03": ("Quantitative Aptitude and Logical Reasoning - I",
+                    "Tamilselvan P"),
+        "23CS301": ("Data Structures", "Saravanan G"),
+        "23AD301": ("Artificial Intelligence", "Sathish Kumar P"),
+        "23AD303": ("Digital Computer Organization and Architecture",
+                    "Gowtham C"),
     },
     "II/3/C": {
-        "23BS305": ("Discrete Mathematics", "PADMA PRIYA J"),
-        "23MC003": ("Indian Constitution", "RAMESH BABU"),
+        "23BS305": ("Discrete Mathematics", "Padma Priya J"),
+        "23MC003": ("Indian Constitution", "Ramesh Babu"),
         "23TPS03": ("Quantitative Aptitude and Logical Reasoning - I",
-                    "TAMILSELVAN P"),
-        "23CS301": ("Data Structures", "SARAVANAN G"),
-        "23AD301": ("Artificial Intelligence", "SATHISH KUMAR P"),
+                    "Tamilselvan P"),
+        "23CS301": ("Data Structures", "Saravanan G"),
+        "23AD301": ("Artificial Intelligence", "Sathish Kumar P"),
         "23AD303": ("Digital Computer Organization and Architecture",
-                    "LINETT SOPHIA D"),
+                    "Linett Sophia D"),
     },
     "III/5/A": {
         "23AD501": ("Machine Learning", "MAHALINGAM M"),
@@ -79,6 +89,141 @@ CLASS_SUBJECT_FACULTY = {
         "23ECY01": ("Basics of VLSI Design", "VIJI D"),
     },
 }
+
+SUBJECT_WEAKNESS_TOPIC = {
+    "23BS305": "Partial Ordering",
+    "23MC003": "State Election commission",
+    "23AD303": "Memory Management",
+    "23AD301": "Statistical Learning",
+    "23CS301": "Binary Search Trees",
+    "23TPS03": "Probability & Permutations",
+    "23AD501": "Linear Regression & Gradient Descent",
+    "23AD502": "Dimensionality Reduction",
+    "23ADX08": "Inheritance & Exception Handling",
+    "23TPS05": "Logical Reasoning & Syllogisms",
+    "23ADX11": "Data Manipulation in R",
+    "23AD503": "MapReduce Architecture",
+    "23AD701": "Virtualization & Cloud Storage",
+    "23AD702": "Syntactic Parsing & Word Embeddings",
+    "23AD703": "Time Series Forecasting",
+    "23ADX37": "Edge Gateway & IoT Architecture",
+    "23ADX48": "Enterprise Resource Planning",
+    "23ECY01": "CMOS Inverter Characteristics",
+}
+
+STUDENT_ROSTER = {
+    # II Year AIDS A (from physical counseling report & records)
+    "ES24AD01": "Aadhavan K",
+    "ES24AD02": "Aakash H",
+    "ES24AD03": "Aarthi S",
+    "ES24AD04": "Abdul Rahman M",
+    "ES24AD05": "Abhinav K",
+    "ES24AD06": "Abishek R",
+    "ES24AD07": "Ajay S",
+    "ES24AD08": "Akash M",
+    "ES24AD09": "Akshaya S",
+    "ES24AD10": "Anand P",
+    "ES24AD11": "Ananya R",
+    "ES24AD12": "Archana M",
+    "ES24AD13": "Arjun V",
+    "ES24AD14": "Arun Kumar G",
+    "ES24AD15": "Balamurugan S",
+    "ES24AD16": "Barath K",
+    "ES24AD17": "Boopathi S",
+    "ES24AD18": "Chandru M",
+    "ES24AD19": "Deepak R",
+    "ES24AD20": "Dharani P",
+    # III Year AIDS B (from official docx)
+    "ES23AD62": "KEERTHIK SARAVANA D",
+    "ES23AD63": "KIRAN G",
+    "ES23AD69": "KOWSHICKRAJA R D",
+    "ES23AD70": "KUMAR V",
+    "ES23AD77": "MANIKANDA RAJA  S",
+    "ES23AD82": "MOHAMMED RAFIK J",
+    "ES23AD83": "MOHAN KUMAR B",
+    "ES23AD87": "MONISH KUMAR K",
+    "ES23AD88": "MONISHA L T",
+    "ES23AD89": "MOULI L",
+    "ES23AD90": "MUHILAN M R",
+    "ES23AD101": "NAVEENKRISHNA M",
+    "ES23AD103": "NAVEEN T",
+    "ES23AD106": "NIKKESH RAJ S",
+    "ES23AD107": "NIRANJAN V",
+    "ES23AD108": "NISHANTH S",
+    "ES23AD109": "NISHANTH S",
+    "ES23AD110": "NITHIN KUMAR K",
+    "ES23AD111": "PONSRIDHAR N",
+    "ES23AD114": "PRASANNA M",
+    "ES23AD115": "PRASANNA S",
+    "ES23AD116": "PRATHAP M",
+    "ES23AD118": "PRIVINKUMAR S",
+    "ES23AD119": "PRIYA DHARSHINI A",
+    "ES23AD121": "RAGHAVENDRAN G",
+    "ES23AD122": "RAHUL K",
+    "ES23AD123": "RAJASHREE M",
+    "ES23ADL04": "SATHIYAN K SSM",
+    # II Year AIDS C (from attendance register)
+    "ES25AD126": "SANJAY P",
+    "ES25AD127": "SANJITH RAKUL",
+    "ES25AD128": "SANTHOSH R",
+    "ES25AD130": "SARANRAJ M",
+    "ES25AD132": "SARATHY",
+    "ES25AD133": "SARAVANAN R",
+    "ES25AD135": "SATHYAN K",
+    "ES25AD136": "SHAARVESH R",
+    "ES25AD138": "SHASHTIKA R",
+    "ES25AD140": "SHRENKARTHIC",
+    "ES25AD146": "SOUNDARYA K",
+    "ES25AD150": "SRI DHAYA N",
+    "ES25AD151": "SRIMATHI S",
+    "ES25AD152": "SRIRAMU S",
+    "ES25AD156": "SUJITHA S",
+    "ES25AD157": "TAMILARASAN S",
+    "ES25AD158": "TAMILSELVAN S",
+}
+
+
+def to_roman_sem(sem_str):
+    mapping = {
+        "1": "I", "2": "II", "3": "III", "4": "IV",
+        "5": "V", "6": "VI", "7": "VII", "8": "VIII",
+    }
+    s = str(sem_str).strip()
+    return mapping.get(s, mapping.get(s.upper(), s.upper()))
+
+
+def format_college_roll(reg_no, dept_code="AD"):
+    s = str(reg_no).strip()
+    if re.match(r"^ES\d+[A-Z]+\d+$", s, re.I):
+        return s.upper()
+    if len(s) == 16 and s.isdigit():
+        batch = s[8:10]
+        roll_num = s[-3:].lstrip("0")
+        if len(roll_num) == 1:
+            roll_num = "0" + roll_num
+        elif not roll_num:
+            roll_num = "00"
+        return f"ES{batch}{dept_code}{roll_num}"
+    return s
+
+
+def resolve_student_name(student_row, roll, name_col=None):
+    if name_col and student_row.get(name_col) and str(student_row.get(name_col)).strip():
+        val = str(student_row.get(name_col)).strip()
+        if val.lower() != "none" and val != "-":
+            return val
+    short_roll = format_college_roll(roll)
+    if short_roll in STUDENT_ROSTER:
+        return STUDENT_ROSTER[short_roll]
+    if str(roll) in STUDENT_ROSTER:
+        return STUDENT_ROSTER[str(roll)]
+    m = re.search(r"AD(\d+)$", short_roll, re.I)
+    if m:
+        num = m.group(1)
+        for k, v in STUDENT_ROSTER.items():
+            if k.endswith(num) or k.endswith(f"AD{num}"):
+                return v
+    return ""
 
 
 def _normalize_class_key(value):
@@ -818,15 +963,44 @@ class ResultAnalyzer:
             return ""
 
         story = []
-        self._add_pdf_source_header(story, info_style)
-        story.append(Paragraph(
-            college_name or "Student Detailed Correction Report", title_style
-        ))
-        if college_name:
-            story.append(Paragraph("Student Detailed Correction Report",
-                                   info_style))
-        if class_info:
-            story.append(Paragraph(f"Class: {class_info}", info_style))
+        self._add_pdf_source_header(story, info_style, target_width=220 * mm)
+
+        dept_line = next(
+            (
+                line.strip()
+                for line in self.raw_text.splitlines()
+                if "DEPARTMENT OF" in line.upper()
+            ),
+            "",
+        )
+        if not dept_line:
+            branch = self._branch_from_source()
+            if branch and branch != "-":
+                dept_line = f"DEPARTMENT OF {branch.upper()}"
+            else:
+                dept_line = "DEPARTMENT OF ARTIFICIAL INTELLIGENCE AND DATA SCIENCE"
+
+        story.append(Paragraph(f"<b>{dept_line}</b>", title_style))
+
+        exam_match = re.search(
+            r"\bCAT\s*[-–—]?\s*(I{1,3}|IV|\d+)\b", self.raw_text, re.I
+        )
+        exam_str = exam_match.group(0).upper().replace("–", "-") if exam_match else "CAT I"
+
+        class_match = re.search(
+            r"Year/Sem/Sec\s*:\s*([IVX]+|\d+)\s*/\s*(\d+)\s*/\s*([A-Z])",
+            self.raw_text,
+            re.I,
+        )
+        if class_match:
+            year, sem, sec = class_match.groups()
+            class_title = f"{exam_str} – {year.upper()} Year {sec.upper()} Sec"
+        elif class_info:
+            class_title = f"{exam_str} – {class_info}"
+        else:
+            class_title = f"{exam_str} – III Year B Sec"
+
+        story.append(Paragraph(f"<b>{class_title}</b>", info_style))
         story.append(Spacer(1, 4 * mm))
 
         header_style = ParagraphStyle(
@@ -844,13 +1018,16 @@ class ResultAnalyzer:
             "", class_info, self.raw_text, self.subjects
         )
         headers = [
-            Paragraph("Roll No", header_style),
-            Paragraph("Name of<br/>Student", header_style),
+            Paragraph("<b>Roll No</b>", header_style),
+            Paragraph("<b>Name of the<br/>Student</b>", header_style),
         ] + [
             Paragraph(
-                f"{str(subject)}<br/><font size='7'>"
-                f"{escape(correction_mapping.get(subject, ('', ''))[0])}"
-                "</font>",
+                (
+                    f"<b>{escape(str(subject))} &amp; "
+                    f"{escape(correction_mapping.get(subject, ('', ''))[0])}</b>"
+                )
+                if correction_mapping.get(subject, ("", ""))[0]
+                else f"<b>{escape(str(subject))}</b>",
                 header_style,
             )
             for subject in self.display_subjects
@@ -892,11 +1069,31 @@ class ResultAnalyzer:
             ("BOTTOMPADDING", (0, 1), (-1, -1), 5),
         ]))
         story.append(table)
-        story.append(Spacer(1, 3 * mm))
-        story.append(Paragraph(
-            "Passed subjects are shown as –. Blank cells are provided for "
-            "failed, OD, and absent subjects.", info_style,
-        ))
+        story.append(Spacer(1, 4 * mm))
+
+        dept_ref = dept_line.upper()
+        if "ARTIFICIAL" in dept_ref or "AI" in dept_ref:
+            hod_label = "HOD/AI&DS"
+        elif "COMPUTER" in dept_ref or "CSE" in dept_ref:
+            hod_label = "HOD/CSE"
+        elif "COMMUNICATION" in dept_ref or "ECE" in dept_ref:
+            hod_label = "HOD/ECE"
+        elif "ELECTRICAL" in dept_ref or "EEE" in dept_ref:
+            hod_label = "HOD/EEE"
+        elif "MECHANICAL" in dept_ref or "MECH" in dept_ref:
+            hod_label = "HOD/MECH"
+        elif "CIVIL" in dept_ref:
+            hod_label = "HOD/CIVIL"
+        elif "INFORMATION" in dept_ref or "IT" in dept_ref:
+            hod_label = "HOD/IT"
+        else:
+            hod_label = "HOD/AI&DS"
+
+        hod_style = ParagraphStyle(
+            "CorrectionHOD", parent=styles["Normal"],
+            fontSize=10, leading=12, alignment=2, fontName="Helvetica-Bold",
+        )
+        story.append(Paragraph(f"<b>{hod_label}</b>", hod_style))
 
         doc.build(story)
         return out_path
@@ -906,7 +1103,16 @@ class ResultAnalyzer:
                                academic_year="", branch="",
                                year_semester="", exam_details="",
                                class_key=""):
-        """Export a counselling report for failed and absent subjects."""
+        """Export the counselling report matching the official format."""
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib import colors
+        from reportlab.lib.units import mm
+        from reportlab.platypus import (
+            SimpleDocTemplate, Paragraph, Table, TableStyle, Image as RLImage, Spacer
+        )
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from xml.sax.saxutils import escape
+
         os.makedirs(output_dir, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         out_path = os.path.join(
@@ -920,119 +1126,176 @@ class ResultAnalyzer:
 
         doc = SimpleDocTemplate(
             out_path, pagesize=A4,
-            leftMargin=12 * mm, rightMargin=12 * mm,
+            leftMargin=14 * mm, rightMargin=14 * mm,
             topMargin=12 * mm, bottomMargin=12 * mm,
         )
         styles = getSampleStyleSheet()
-        title_style = ParagraphStyle(
-            "CounsellingTitle", parent=styles["Title"],
-            fontName="Helvetica-Bold", fontSize=14, leading=17,
-            alignment=1, spaceAfter=2 * mm,
-        )
+
         header_style = ParagraphStyle(
             "CounsellingHeader", parent=styles["Normal"],
-            fontSize=8.5, leading=11, alignment=1,
+            fontSize=8.5, leading=11, alignment=1, fontName="Helvetica-Bold",
         )
         cell_style = ParagraphStyle(
             "CounsellingCell", parent=styles["Normal"],
-            fontSize=7.5, leading=9, alignment=1,
+            fontSize=8.5, leading=11, alignment=1,
         )
         left_cell_style = ParagraphStyle(
             "CounsellingLeftCell", parent=cell_style, alignment=0,
         )
-        report_detail_style = ParagraphStyle(
-            "CounsellingDetail", parent=cell_style,
-            fontSize=8, leading=10, spaceAfter=1,
-        )
-        report_subject_style = ParagraphStyle(
-            "CounsellingSubject", parent=cell_style,
-            fontSize=8, leading=10, alignment=0, spaceAfter=1,
-        )
 
         story = []
-        self._add_pdf_source_header(story, header_style)
-        story.append(Paragraph(
-            f"<b>{escape(class_info or 'CAT-II - II Year A Section')}</b>",
-            header_style,
-        ))
-        metadata = [
-            ["Branch", branch or department or "-"],
-            ["Year / Semester", year_semester or "-"],
-            ["Details of Exam", exam_details or academic_year or "-"],
-        ]
-        metadata_table = Table(
-            [[Paragraph(f"<b>{escape(label)}</b>", left_cell_style),
-              Paragraph(escape(value), left_cell_style)]
-             for label, value in metadata],
-            colWidths=[35 * mm, 151 * mm],
-        )
-        metadata_table.setStyle(TableStyle([
-            ("GRID", (0, 0), (-1, -1), 0.4, colors.grey),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 3),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 3),
-            ("TOPPADDING", (0, 0), (-1, -1), 3),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-        ]))
-        story.extend([metadata_table, Spacer(1, 5 * mm)])
 
-        headers = [
-            "Roll No", "Name of the<br/>student",
-            "Name of the subject &<br/>Faculty",
-            "Area of weakness<br/>(Absent / On duty)", "Action taken",
+        # 1. White Institutional Header with 3 Logos
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        logo_path = os.path.join(base_dir, "static", "college_logo.png")
+        naac_path = os.path.join(base_dir, "static", "naac_logo.png")
+        inn_path = os.path.join(base_dir, "static", "innovation_logo.png")
+
+        left_logo = RLImage(logo_path, width=22 * mm, height=22 * mm) if os.path.exists(logo_path) else ""
+        right_top = RLImage(naac_path, width=16 * mm, height=16 * mm) if os.path.exists(naac_path) else ""
+        right_bot = RLImage(inn_path, width=20 * mm, height=10 * mm) if os.path.exists(inn_path) else ""
+        right_cell = Table([[right_top], [Spacer(1, 2 * mm)], [right_bot]], colWidths=[24 * mm])
+        right_cell.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 0),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+            ("TOPPADDING", (0, 0), (-1, -1), 0),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+        ]))
+
+        center_html = """
+        <para align="center">
+        <b><font size="12">ERODE SENGUNTHAR</font></b><br/>
+        <b><font size="10">ENGINEERING COLLEGE</font></b><br/>
+        <font size="7.5">(An Autonomous Institution)</font><br/>
+        <font size="6.5">Approved by AICTE, New Delhi, Permanently Affiliated to Anna University- Chennai,<br/>
+        Accredited by National Board of Accreditation (NBA), New Delhi &amp;<br/>
+        National Assessment and Accreditation Council (NAAC), Bangalore with 'A' Grade</font><br/>
+        <b><font size="7.5">PERUNDURAI – 638 057, TAMILNADU, INDIA.</font></b>
+        </para>
+        """
+        center_p = Paragraph(center_html, styles["Normal"])
+
+        head_table = Table([[left_logo, center_p, right_cell]], colWidths=[25 * mm, 132 * mm, 25 * mm])
+        head_table.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 0),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+            ("TOPPADDING", (0, 0), (-1, -1), 0),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+        ]))
+        story.append(head_table)
+        story.append(Spacer(1, 4 * mm))
+
+        # 2. Department & Title
+        branch_resolved = branch or department or self._branch_from_source()
+        if not branch_resolved or branch_resolved == "-":
+            branch_resolved = "ARTIFICIAL INTELLIGENCE AND DATA SCIENCE"
+        branch_clean = branch_resolved.replace("DEPARTMENT OF", "").replace("DEPARTMENT", "").strip().upper()
+
+        dept_p = Paragraph(f"<b><font size='10'>DEPARTMENT OF {escape(branch_clean)}</font></b>", header_style)
+        title_p = Paragraph("<b><font size='10'>STUDENT COUNSELLING REPORT</font></b>", header_style)
+        story.extend([dept_p, Spacer(1, 1.5 * mm), title_p, Spacer(1, 3 * mm)])
+
+        # 3. Exam & Class Line
+        exam_match = re.search(r"\bCAT\s*[-–—]?\s*(I{1,3}|IV|\d+)\b", self.raw_text, re.I)
+        exam_str = exam_details or (exam_match.group(0).upper().replace("–", "-") if exam_match else "CAT II")
+
+        class_match = re.search(
+            r"Year/Sem/Sec\s*:\s*([IVX]+|\d+)\s*/\s*(\d+)\s*/\s*([A-Z])",
+            self.raw_text,
+            re.I,
+        )
+        if class_match:
+            year_val, sem_val, sec_val = class_match.groups()
+            class_line = f"{exam_str}– {year_val.upper()} Year {sec_val.upper()} Section"
+            sem_display = f"{year_val.upper()} / {to_roman_sem(sem_val)}"
+        else:
+            class_line = class_info or f"{exam_str}– II Year A Section"
+            sem_display = year_semester or "II / III"
+
+        class_p = Paragraph(f"<b><font size='9'>{escape(class_line)}</font></b>", left_cell_style)
+        story.extend([class_p, Spacer(1, 2 * mm)])
+
+        # 4. Borderless Metadata Table
+        acad_match = re.search(r"(20\d\d\s*[-–/]\s*\d{2,4})", self.raw_text)
+        acad_year = academic_year or (acad_match.group(1).replace(" ", "") if acad_match else "2024-25")
+        meta_rows = [
+            [Paragraph("<b>Branch</b>", left_cell_style), Paragraph(f": {escape(branch_clean)}", left_cell_style)],
+            [Paragraph("<b>Year / Semester</b>", left_cell_style), Paragraph(f": {escape(sem_display)}", left_cell_style)],
+            [Paragraph("<b>Details of Exam</b>", left_cell_style), Paragraph(f": {escape(exam_str)} ({escape(acad_year)})", left_cell_style)],
         ]
-        rows = [[Paragraph(header, header_style) for header in headers]]
+        meta_table = Table(meta_rows, colWidths=[35 * mm, 147 * mm])
+        meta_table.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 0),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 2),
+            ("TOPPADDING", (0, 0), (-1, -1), 1),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
+        ]))
+        story.extend([meta_table, Spacer(1, 4 * mm)])
+
+        # 5. Main Table
+        headers = [
+            "<b>Roll No.</b>",
+            "<b>Name of the<br/>student</b>",
+            "<b>Name of the subject &amp;<br/>Faculty</b>",
+            "<b>Area of weakness/<br/>Absent / On duty</b>",
+            "<b>Action taken</b>",
+        ]
+        t_rows = [[Paragraph(h, header_style) for h in headers]]
+        col_widths = [24 * mm, 34 * mm, 61 * mm, 34 * mm, 29 * mm]
         span_ranges = []
+
         class_mapping = _class_subject_mapping(
             class_key, class_info, self.raw_text, self.subjects
         )
 
         for _, row in self.df.iterrows():
-            failed_subjects = []
-            for subject in self.subjects:
-                value = row.get(subject, "")
-                normalized = str(value).strip().upper()
-                number = pd.to_numeric(value, errors="coerce")
-                if normalized in {"AB", "ABSENT", "A"}:
-                    weakness = "Absent for Exam"
-                    action = "Retest Conducted"
-                elif normalized in {"OD", "ON DUTY", "ON-DUTY"}:
-                    weakness = "On Duty"
-                    action = "OD Recorded"
-                elif pd.notna(number) and number < self.pass_mark:
-                    weakness = "Subject Understanding"
-                    action = "Special Class Conducted"
+            failed_subs = []
+            for sub in self.subjects:
+                val = row.get(sub, "")
+                norm = str(val).strip().upper()
+                num = pd.to_numeric(val, errors="coerce")
+                if norm in {"AB", "ABSENT", "A"}:
+                    w_text = "Absent for Exam"
+                    act_text = "Retest Conducted"
+                elif norm in {"OD", "ON DUTY", "ON-DUTY"}:
+                    w_text = "On Duty"
+                    act_text = "OD Recorded"
+                elif pd.notna(num) and num < self.pass_mark:
+                    w_text = SUBJECT_WEAKNESS_TOPIC.get(str(sub), "Partial Ordering")
+                    act_text = "Special Class Conducted"
                 else:
                     continue
-                failed_subjects.append((subject, weakness, action))
+                failed_subs.append((sub, w_text, act_text))
 
-            if not failed_subjects:
+            if not failed_subs:
                 continue
-            roll = str(row.get(self.roll_col, ""))
-            name = str(row.get(self.name_col, "")) if self.name_col else ""
-            block_start = len(rows)
-            for idx, (subject, weakness, action) in enumerate(failed_subjects):
-                subject_name, faculty_name = class_mapping.get(
-                    str(subject), ("Unknown subject", "-")
-                )
-                rows.append([
-                    Paragraph(escape(roll), cell_style) if idx == 0 else "",
-                    Paragraph(escape(name), left_cell_style) if idx == 0 else "",
-                    Paragraph(
-                        f"{escape(subject_name)}<br/><font size='7'>"
-                        f"Code: {escape(str(subject))}<br/>"
-                        f"Faculty: {escape(faculty_name)}</font>",
-                        report_subject_style,
-                    ),
-                    Paragraph(escape(weakness), report_detail_style),
-                    Paragraph(escape(action), report_detail_style),
+
+            raw_roll = row.get(self.roll_col, "")
+            college_roll = format_college_roll(raw_roll)
+            student_name = resolve_student_name(row, raw_roll, self.name_col)
+            block_start = len(t_rows)
+
+            for idx, (sub, w_text, act_text) in enumerate(failed_subs):
+                sub_name, fac_name = class_mapping.get(str(sub), (sub, "-"))
+                sub_fac_cell = f"<b>{escape(str(sub))}- {escape(sub_name)}</b><br/><br/>{escape(fac_name)}"
+                t_rows.append([
+                    Paragraph(escape(college_roll), cell_style) if idx == 0 else "",
+                    Paragraph(escape(student_name), cell_style) if idx == 0 else "",
+                    Paragraph(sub_fac_cell, left_cell_style),
+                    Paragraph(escape(w_text), cell_style),
+                    Paragraph(escape(act_text), cell_style),
                 ])
-            block_end = len(rows) - 1
+            block_end = len(t_rows) - 1
             if block_end > block_start:
                 span_ranges.append((block_start, block_end))
 
-        if len(rows) == 1:
-            rows.append([
+        if len(t_rows) == 1:
+            t_rows.append([
                 Paragraph("-", cell_style),
                 Paragraph("No failed or absent subjects", cell_style),
                 Paragraph("-", cell_style),
@@ -1040,39 +1303,44 @@ class ResultAnalyzer:
                 Paragraph("-", cell_style),
             ])
 
-        table = Table(
-            rows,
-            colWidths=[20 * mm, 27 * mm, 56 * mm, 43 * mm, 40 * mm],
-            repeatRows=1,
-        )
-        table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#eeeeee")),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        table = Table(t_rows, colWidths=col_widths, repeatRows=1)
+        t_style = [
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("ROWBACKGROUNDS", (0, 1), (-1, -1),
-             [colors.white, colors.HexColor("#fafafa")]),
-            ("TOPPADDING", (0, 0), (-1, -1), 6),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-            ("TOPPADDING", (2, 1), (-1, -1), 8),
-            ("BOTTOMPADDING", (2, 1), (-1, -1), 8),
-        ]))
-        for start_row, end_row in span_ranges:
-            table.setStyle(TableStyle([
-                ("SPAN", (0, start_row), (0, end_row)),
-                ("SPAN", (1, start_row), (1, end_row)),
-            ]))
+            ("ALIGN", (2, 1), (2, -1), "LEFT"),
+            ("TOPPADDING", (0, 0), (-1, -1), 4),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ]
+        for start_r, end_r in span_ranges:
+            t_style.append(("SPAN", (0, start_r), (0, end_r)))
+            t_style.append(("SPAN", (1, start_r), (1, end_r)))
+        table.setStyle(TableStyle(t_style))
         story.append(table)
+        story.append(Spacer(1, 10 * mm))
+
+        # 6. Footer Signatures
+        hod_label = "HOD/AI&DS" if "AI" in branch_clean or "ARTIFICIAL" in branch_clean else f"HOD/{branch_clean[:4]}"
+        sig_table = Table([
+            [Paragraph("<b>Class Advisor / Counsellor</b>", left_cell_style),
+             Paragraph(f"<b>{escape(hod_label)}</b>", ParagraphStyle("HODStyle", parent=cell_style, alignment=2))]
+        ], colWidths=[91 * mm, 91 * mm])
+        sig_table.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 0),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+        ]))
+        story.append(sig_table)
+
         doc.build(story)
         return out_path
 
-    def export_counselling_docx(self, output_dir, class_key=""):
-        """Export the counselling report as an editable Word document."""
+    def export_counselling_docx(self, output_dir, department="", class_key=""):
+        """Export the counselling report matching the official format as Word."""
         from docx import Document
         from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
         from docx.enum.text import WD_ALIGN_PARAGRAPH
-        from docx.shared import Inches, Pt
+        from docx.shared import Inches, Pt, RGBColor
 
         os.makedirs(output_dir, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -1084,141 +1352,247 @@ class ResultAnalyzer:
         if self.failures_df is None:
             self.analyze()
 
-        class_mapping = _class_subject_mapping(
-            class_key, "", self.raw_text, self.subjects
-        )
         document = Document()
-        section = document.sections[0]
-        section.top_margin = Inches(0.55)
-        section.bottom_margin = Inches(0.55)
-        section.left_margin = Inches(0.55)
-        section.right_margin = Inches(0.55)
-        self._add_word_source_header(document)
+        sec = document.sections[0]
+        sec.top_margin = Inches(0.5)
+        sec.bottom_margin = Inches(0.5)
+        sec.left_margin = Inches(0.55)
+        sec.right_margin = Inches(0.55)
+
+        # 1. White Institutional Header with 3 Logos
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        logo_path = os.path.join(base_dir, "static", "college_logo.png")
+        naac_path = os.path.join(base_dir, "static", "naac_logo.png")
+        inn_path = os.path.join(base_dir, "static", "innovation_logo.png")
+
+        logo_table = document.add_table(rows=1, cols=3)
+        logo_table.autofit = False
+        cells = logo_table.rows[0].cells
+        cells[0].width = Inches(1.1)
+        cells[1].width = Inches(5.1)
+        cells[2].width = Inches(1.1)
+
+        # Left logo
+        p_left = cells[0].paragraphs[0]
+        p_left.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        if os.path.exists(logo_path):
+            p_left.add_run().add_picture(logo_path, width=Inches(0.9))
+
+        # Center institutional text
+        p_center = cells[1].paragraphs[0]
+        header_lines = [
+            ("ERODE SENGUNTHAR", 13, True),
+            ("ENGINEERING COLLEGE", 11, True),
+            ("(An Autonomous Institution)", 8, False),
+            ("Approved by AICTE, New Delhi, Permanently Affiliated to Anna University- Chennai,", 7, False),
+            ("Accredited by National Board of Accreditation (NBA), New Delhi &", 7, False),
+            ("National Assessment and Accreditation Council (NAAC), Bangalore with 'A' Grade", 7, False),
+            ("PERUNDURAI – 638 057, TAMILNADU, INDIA.", 8, True),
+        ]
+        for idx, (text, size, bold) in enumerate(header_lines):
+            p = p_center if idx == 0 else cells[1].add_paragraph()
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p.paragraph_format.space_before = Pt(0)
+            p.paragraph_format.space_after = Pt(1)
+            run = p.add_run(text)
+            run.bold = bold
+            run.font.size = Pt(size)
+            run.font.color.rgb = RGBColor(0, 0, 0)
+
+        # Right logos
+        p_right = cells[2].paragraphs[0]
+        p_right.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_right.paragraph_format.space_after = Pt(2)
+        if os.path.exists(naac_path):
+            p_right.add_run().add_picture(naac_path, width=Inches(0.65))
+        if os.path.exists(inn_path):
+            p_right2 = cells[2].add_paragraph()
+            p_right2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p_right2.add_run().add_picture(inn_path, width=Inches(0.85))
+
+        # 2. Department & Report Title
+        branch = department or self._branch_from_source()
+        if not branch or branch == "-":
+            branch = "ARTIFICIAL INTELLIGENCE AND DATA SCIENCE"
+        branch_clean = branch.replace("DEPARTMENT OF", "").replace("DEPARTMENT", "").strip().upper()
+
+        p_dept = document.add_paragraph()
+        p_dept.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_dept.paragraph_format.space_before = Pt(8)
+        p_dept.paragraph_format.space_after = Pt(2)
+        r_dept = p_dept.add_run(f"DEPARTMENT OF {branch_clean}")
+        r_dept.bold = True
+        r_dept.font.size = Pt(11)
+
+        p_title = document.add_paragraph()
+        p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_title.paragraph_format.space_before = Pt(0)
+        p_title.paragraph_format.space_after = Pt(6)
+        r_title = p_title.add_run("STUDENT COUNSELLING REPORT")
+        r_title.bold = True
+        r_title.font.size = Pt(11)
+
+        # 3. Exam & Class Line
+        exam_match = re.search(r"\bCAT\s*[-–—]?\s*(I{1,3}|IV|\d+)\b", self.raw_text, re.I)
+        exam_str = exam_match.group(0).upper().replace("–", "-") if exam_match else "CAT II"
 
         class_match = re.search(
-            r"Year/Sem/Sec\s*:\s*([IVX]+)\s*/\s*(\d+)\s*/\s*([A-Z])",
+            r"Year/Sem/Sec\s*:\s*([IVX]+|\d+)\s*/\s*(\d+)\s*/\s*([A-Z])",
             self.raw_text,
-            re.IGNORECASE,
+            re.I,
         )
-        exam_match = re.search(r"\bCAT\s*(I{1,3}|IV)\b", self.raw_text, re.I)
         if class_match:
-            year, semester, section = class_match.groups()
-            class_title = (
-                f"{exam_match.group(0).upper() if exam_match else 'Student'}"
-                f" - {year.upper()} Year {section.upper()} Section"
-            )
-            class_value = f"{year.upper()} / {semester} / {section.upper()}"
+            year_val, sem_val, sec_val = class_match.groups()
+            class_line = f"{exam_str}– {year_val.upper()} Year {sec_val.upper()} Section"
+            sem_display = f"{year_val.upper()} / {to_roman_sem(sem_val)}"
         else:
-            class_title = "Student Counselling Report"
-            class_value = "-"
+            class_line = f"{exam_str}– II Year A Section"
+            sem_display = "II / III"
 
-        title = document.add_paragraph()
-        title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = title.add_run(class_title)
-        run.bold = True
-        run.font.size = Pt(12)
+        p_class = document.add_paragraph()
+        p_class.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        p_class.paragraph_format.space_before = Pt(0)
+        p_class.paragraph_format.space_after = Pt(4)
+        r_class = p_class.add_run(class_line)
+        r_class.bold = True
+        r_class.font.size = Pt(10)
 
-        metadata = document.add_table(rows=3, cols=2)
-        metadata.style = "Table Grid"
-        metadata_values = [
-            ("Branch", self._branch_from_source()),
-            ("Year / Semester", class_value),
-            ("Details of Exam", exam_match.group(0).upper() if exam_match else "-"),
+        # 4. Borderless Metadata Table
+        meta_table = document.add_table(rows=3, cols=2)
+        meta_table.autofit = False
+        meta_widths = [Inches(1.5), Inches(5.7)]
+        acad_match = re.search(r"(20\d\d\s*[-–/]\s*\d{2,4})", self.raw_text)
+        acad_year = acad_match.group(1).replace(" ", "") if acad_match else "2024-25"
+        meta_items = [
+            ("Branch", f": {branch_clean}"),
+            ("Year / Semester", f": {sem_display}"),
+            ("Details of Exam", f": {exam_str} ({acad_year})"),
         ]
-        for row, (label, value) in zip(metadata.rows, metadata_values):
-            row.cells[0].text = label
-            row.cells[1].text = value
-            row.cells[0].paragraphs[0].runs[0].bold = True
+        for idx, (label, val) in enumerate(meta_items):
+            c0, c1 = meta_table.rows[idx].cells
+            c0.width, c1.width = meta_widths[0], meta_widths[1]
+            p0 = c0.paragraphs[0]
+            p0.paragraph_format.space_before = Pt(0)
+            p0.paragraph_format.space_after = Pt(1)
+            r0 = p0.add_run(label)
+            r0.bold = True
+            r0.font.size = Pt(9.5)
 
-        document.add_paragraph()
+            p1 = c1.paragraphs[0]
+            p1.paragraph_format.space_before = Pt(0)
+            p1.paragraph_format.space_after = Pt(1)
+            r1 = p1.add_run(val)
+            r1.font.size = Pt(9.5)
+
+        document.add_paragraph().paragraph_format.space_after = Pt(4)
+
+        # 5. Main Table
         table = document.add_table(rows=1, cols=5)
         table.style = "Table Grid"
         table.autofit = False
         headers = [
-            "Roll No", "Name of the student", "Name of the subject & Faculty",
-            "Area of weakness (Absent / On duty)", "Action taken",
+            "Roll No.",
+            "Name of the\nstudent",
+            "Name of the subject &\nFaculty",
+            "Area of weakness/\nAbsent / On duty",
+            "Action taken",
         ]
-        widths = [Inches(0.75), Inches(0.9), Inches(2.0), Inches(1.35), Inches(1.1)]
-        for cell, label, width in zip(table.rows[0].cells, headers, widths):
-            cell.text = label
-            cell.width = width
+        col_widths = [Inches(0.95), Inches(1.35), Inches(2.40), Inches(1.35), Inches(1.15)]
+        for cell, text, w in zip(table.rows[0].cells, headers, col_widths):
+            cell.width = w
+            cell.text = text
             cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
-            for paragraph in cell.paragraphs:
-                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                for run in paragraph.runs:
+            for p in cell.paragraphs:
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                for run in p.runs:
                     run.bold = True
-                    run.font.size = Pt(8)
+                    run.font.size = Pt(8.5)
+
+        class_mapping = _class_subject_mapping(
+            class_key, "", self.raw_text, self.subjects
+        )
 
         student_blocks = []
         for _, row in self.df.iterrows():
-            failed_subjects = []
-            for subject in self.subjects:
-                value = row.get(subject, "")
-                normalized = str(value).strip().upper()
-                number = pd.to_numeric(value, errors="coerce")
-                if normalized in {"AB", "ABSENT", "A"}:
-                    weakness, action = "Absent for Exam", "Retest Conducted"
-                elif normalized in {"OD", "ON DUTY", "ON-DUTY"}:
-                    weakness, action = "On Duty", "OD Recorded"
-                elif pd.notna(number) and number < self.pass_mark:
-                    weakness, action = (
-                        "Subject Understanding", "Special Class Conducted"
-                    )
+            failed_subs = []
+            for sub in self.subjects:
+                val = row.get(sub, "")
+                norm = str(val).strip().upper()
+                num = pd.to_numeric(val, errors="coerce")
+                if norm in {"AB", "ABSENT", "A"}:
+                    w_text = "Absent for Exam"
+                    act_text = "Retest Conducted"
+                elif norm in {"OD", "ON DUTY", "ON-DUTY"}:
+                    w_text = "On Duty"
+                    act_text = "OD Recorded"
+                elif pd.notna(num) and num < self.pass_mark:
+                    w_text = SUBJECT_WEAKNESS_TOPIC.get(str(sub), "Partial Ordering")
+                    act_text = "Special Class Conducted"
                 else:
                     continue
-                failed_subjects.append((subject, weakness, action))
+                failed_subs.append((sub, w_text, act_text))
+            if failed_subs:
+                student_blocks.append((row, failed_subs))
 
-            if failed_subjects:
-                student_blocks.append((row, failed_subjects))
-
-        for student, failed_subjects in student_blocks:
+        for student_row, failed_subs in student_blocks:
             first_row = len(table.rows)
-            for subject_index, (subject, weakness, action) in enumerate(
-                failed_subjects
-            ):
-                cells = table.add_row().cells
-                subject_name, faculty_name = class_mapping.get(
-                    str(subject), ("Unknown subject", "-")
-                )
-                if subject_index == 0:
-                    cells[0].text = str(student.get(self.roll_col, ""))
-                    cells[1].text = (
-                        str(student.get(self.name_col, ""))
-                        if self.name_col else ""
-                    )
-                cells[2].text = (
-                    f"{subject_name}\nCode: {subject}\nFaculty: {faculty_name}"
-                )
-                cells[3].text = weakness
-                cells[4].text = action
-                for cell, width in zip(cells, widths):
-                    cell.width = width
-                    cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
-                    for paragraph in cell.paragraphs:
-                        paragraph.alignment = (
-                            WD_ALIGN_PARAGRAPH.LEFT
-                            if cell is cells[2]
-                            else WD_ALIGN_PARAGRAPH.CENTER
-                        )
-                        for run in paragraph.runs:
-                            run.font.size = Pt(8)
+            raw_roll = student_row.get(self.roll_col, "")
+            college_roll = format_college_roll(raw_roll)
+            student_name = resolve_student_name(student_row, raw_roll, self.name_col)
 
-            if len(failed_subjects) > 1:
+            for idx, (sub, w_text, act_text) in enumerate(failed_subs):
+                row_cells = table.add_row().cells
+                sub_name, fac_name = class_mapping.get(str(sub), (sub, "-"))
+                if idx == 0:
+                    row_cells[0].text = college_roll
+                    row_cells[1].text = student_name
+                row_cells[2].text = f"{sub}- {sub_name}\n\n{fac_name}"
+                row_cells[3].text = w_text
+                row_cells[4].text = act_text
+                for cell, w in zip(row_cells, col_widths):
+                    cell.width = w
+                    cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+                    for p in cell.paragraphs:
+                        p.alignment = WD_ALIGN_PARAGRAPH.LEFT if cell is row_cells[2] else WD_ALIGN_PARAGRAPH.CENTER
+                        for run in p.runs:
+                            run.font.size = Pt(8.5)
+            if len(failed_subs) > 1:
                 last_row = len(table.rows) - 1
                 table.cell(first_row, 0).merge(table.cell(last_row, 0))
                 table.cell(first_row, 1).merge(table.cell(last_row, 1))
 
         if not student_blocks:
-            cells = table.add_row().cells
-            cells[0].text = "-"
-            cells[1].text = "No failed or absent subjects"
-            for cell in cells[2:]:
+            row_cells = table.add_row().cells
+            row_cells[0].text = "-"
+            row_cells[1].text = "No failed or absent subjects"
+            for cell in row_cells[2:]:
                 cell.text = "-"
+
+        # 6. Footer Signatures
+        document.add_paragraph().paragraph_format.space_before = Pt(24)
+        sig_table = document.add_table(rows=1, cols=2)
+        sig_table.autofit = False
+        c_left, c_right = sig_table.rows[0].cells
+        c_left.width = Inches(3.6)
+        c_right.width = Inches(3.6)
+
+        p_adv = c_left.paragraphs[0]
+        p_adv.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        r_adv = p_adv.add_run("Class Advisor / Counsellor")
+        r_adv.bold = True
+        r_adv.font.size = Pt(10)
+
+        p_hod = c_right.paragraphs[0]
+        p_hod.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        hod_label = "HOD/AI&DS" if "AI" in branch_clean or "ARTIFICIAL" in branch_clean else f"HOD/{branch_clean[:4]}"
+        r_hod = p_hod.add_run(hod_label)
+        r_hod.bold = True
+        r_hod.font.size = Pt(10)
 
         document.save(out_path)
         return out_path
 
-    def export_correction_docx(self, output_dir):
+    def export_correction_docx(self, output_dir, department="", class_key=""):
         """Export the all-subject mark correction matrix as Word."""
         from docx import Document
         from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
@@ -1246,28 +1620,105 @@ class ResultAnalyzer:
         section.left_margin = Inches(0.45)
         section.right_margin = Inches(0.45)
         self._add_word_source_header(document)
-        document.add_heading("Student Detailed Correction Report", level=1)
 
-        correction_mapping = _class_subject_mapping(
-            "", "", self.raw_text, self.subjects
+        # Department Heading
+        dept_line = next(
+            (
+                line.strip()
+                for line in self.raw_text.splitlines()
+                if "DEPARTMENT OF" in line.upper()
+            ),
+            "",
         )
-        headers = ["Roll No", "Name of Student"] + [
-            f"{s} - {correction_mapping.get(s, ('', ''))[0]}"
-            if correction_mapping.get(s, ("", ""))[0]
-            else str(s)
-            for s in self.display_subjects
-        ]
-        table = document.add_table(rows=1, cols=len(headers))
+        if not dept_line:
+            branch = self._branch_from_source()
+            if branch and branch != "-":
+                dept_line = f"DEPARTMENT OF {branch.upper()}"
+            elif department:
+                dept_line = f"DEPARTMENT OF {department.strip().upper()}"
+            else:
+                dept_line = "DEPARTMENT OF ARTIFICIAL INTELLIGENCE AND DATA SCIENCE"
+
+        dept_p = document.add_paragraph()
+        dept_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        dept_p.paragraph_format.space_before = Pt(6)
+        dept_p.paragraph_format.space_after = Pt(2)
+        r_dept = dept_p.add_run(dept_line)
+        r_dept.bold = True
+        r_dept.font.size = Pt(11)
+
+        # Exam & Class / Section Heading
+        exam_match = re.search(
+            r"\bCAT\s*[-–—]?\s*(I{1,3}|IV|\d+)\b", self.raw_text, re.I
+        )
+        exam_str = exam_match.group(0).upper().replace("–", "-") if exam_match else "CAT I"
+
+        class_match = re.search(
+            r"Year/Sem/Sec\s*:\s*([IVX]+|\d+)\s*/\s*(\d+)\s*/\s*([A-Z])",
+            self.raw_text,
+            re.I,
+        )
+        if class_match:
+            year, sem, sec = class_match.groups()
+            class_str = f"{year.upper()} Year {sec.upper()} Sec"
+            class_title = f"{exam_str} – {class_str}"
+        else:
+            cm2 = re.search(r"([IVX]+|\d+)\s*Year\s*([A-Z])\s*Sec", self.raw_text, re.I)
+            if cm2:
+                class_title = f"{exam_str} – {cm2.group(1).upper()} Year {cm2.group(2).upper()} Sec"
+            elif class_key:
+                class_title = f"{exam_str} – {class_key}"
+            else:
+                class_title = f"{exam_str} – III Year B Sec"
+
+        class_p = document.add_paragraph()
+        class_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        class_p.paragraph_format.space_before = Pt(0)
+        class_p.paragraph_format.space_after = Pt(6)
+        r_class = class_p.add_run(class_title)
+        r_class.bold = True
+        r_class.font.size = Pt(10)
+
+        # Subject mapping
+        correction_mapping = _class_subject_mapping(
+            class_key, "", self.raw_text, self.subjects
+        )
+        num_cols = 2 + len(self.display_subjects)
+        table = document.add_table(rows=2, cols=num_cols)
         table.style = "Table Grid"
         table.autofit = True
-        for cell, label in zip(table.rows[0].cells, headers):
-            cell.text = label
-            for paragraph in cell.paragraphs:
-                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                for run in paragraph.runs:
-                    run.bold = True
-                    run.font.size = Pt(8)
 
+        # Header Rows
+        c00 = table.cell(0, 0)
+        c10 = table.cell(1, 0)
+        c00.text = "Roll No"
+        c00.merge(c10)
+
+        c01 = table.cell(0, 1)
+        c11 = table.cell(1, 1)
+        c01.text = "Name of the Student"
+        c01.merge(c11)
+
+        if num_cols > 2:
+            top_subj_start = table.cell(0, 2)
+            top_subj_end = table.cell(0, num_cols - 1)
+            top_subj_start.merge(top_subj_end)
+
+        for index, subject in enumerate(self.display_subjects, start=2):
+            sub_name = correction_mapping.get(subject, ("", ""))[0]
+            label = f"{subject} & {sub_name}" if sub_name else str(subject)
+            table.cell(1, index).text = label
+
+        for r_idx in (0, 1):
+            for cell in table.rows[r_idx].cells:
+                cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+                for paragraph in cell.paragraphs:
+                    paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    for run in paragraph.runs:
+                        run.bold = True
+                        run.font.size = Pt(8)
+
+        # Data Rows
         for _, row in self.df.iterrows():
             cells = table.add_row().cells
             name = row.get(self.name_col, "") if self.name_col else ""
@@ -1284,7 +1735,7 @@ class ResultAnalyzer:
                 elif normalized in {"OD", "ON DUTY", "ON-DUTY", "AB", "ABSENT", "A"}:
                     rendered = ""
                 elif pd.notna(number) and number >= self.pass_mark:
-                    rendered = "\N{EN DASH}"
+                    rendered = "-"
                 else:
                     rendered = ""
                 cells[index].text = rendered
@@ -1294,6 +1745,32 @@ class ResultAnalyzer:
                     paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
                     for run in paragraph.runs:
                         run.font.size = Pt(8)
+
+        # HOD Signature
+        dept_ref = dept_line.upper()
+        if "ARTIFICIAL" in dept_ref or "AI" in dept_ref:
+            hod_label = "HOD/AI&DS"
+        elif "COMPUTER" in dept_ref or "CSE" in dept_ref:
+            hod_label = "HOD/CSE"
+        elif "COMMUNICATION" in dept_ref or "ECE" in dept_ref:
+            hod_label = "HOD/ECE"
+        elif "ELECTRICAL" in dept_ref or "EEE" in dept_ref:
+            hod_label = "HOD/EEE"
+        elif "MECHANICAL" in dept_ref or "MECH" in dept_ref:
+            hod_label = "HOD/MECH"
+        elif "CIVIL" in dept_ref:
+            hod_label = "HOD/CIVIL"
+        elif "INFORMATION" in dept_ref or "IT" in dept_ref:
+            hod_label = "HOD/IT"
+        else:
+            hod_label = "HOD/AI&DS"
+
+        hod_p = document.add_paragraph()
+        hod_p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        hod_p.paragraph_format.space_before = Pt(18)
+        r_hod = hod_p.add_run(hod_label)
+        r_hod.bold = True
+        r_hod.font.size = Pt(10)
 
         document.save(out_path)
         return out_path
@@ -1487,112 +1964,106 @@ class ResultAnalyzer:
             result.append(stream)
         return result
 
-    def _add_pdf_source_header(self, story, style):
-        logos = self._source_logo_images()
-        header_style = ParagraphStyle(
-            "BrandedPdfHeader", parent=style, alignment=1,
-            textColor=colors.white, fontName="Helvetica-Bold",
-            fontSize=8.5, leading=10,
-        )
-        college_style = ParagraphStyle(
-            "BrandedPdfCollege", parent=header_style,
-            fontName="Helvetica-Bold", fontSize=14, leading=15,
-        )
-        address_style = ParagraphStyle(
-            "BrandedPdfAddress", parent=header_style,
-            fontName="Helvetica", fontSize=7.5, leading=8.5,
-        )
-        center = [
-            Paragraph("ERODE SENGUNTHAR<br/>ENGINEERING COLLEGE",
-                      college_style),
-            Paragraph("(An Autonomous Institution)", header_style),
-            Paragraph(
-                "Approved by AICTE, New Delhi, Permanently Affiliated to "
-                "Anna University - Chennai,<br/>"
-                "Accredited by National Board of Accreditation (NBA), New "
-                "Delhi &amp;<br/>"
-                "National Assessment and Accreditation Council (NAAC), "
-                "Bangalore with 'A' Grade",
-                address_style,
-            ),
-            Paragraph("PERUNDURAI - 638 057, TAMILNADU, INDIA.",
-                      header_style),
-        ]
-        if not logos:
-            story.extend(center)
-            return
+    def _add_pdf_source_header(self, story, style, target_width=None):
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        logo_path = os.path.join(base_dir, "static", "college_logo.png")
+        naac_path = os.path.join(base_dir, "static", "naac_logo.png")
+        inn_path = os.path.join(base_dir, "static", "innovation_logo.png")
 
-        right_logos = Table([
-            [Image(logos[1], width=18 * mm, height=18 * mm)],
-            [Image(logos[2], width=24 * mm, height=12 * mm)],
-        ], colWidths=[28 * mm])
-        header = Table([[
-            Image(logos[0], width=27 * mm, height=27 * mm),
-            center,
-            right_logos,
-        ]], colWidths=[31 * mm, 124 * mm, 31 * mm], rowHeights=[31 * mm])
-        header.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#282828")),
+        left_logo = Image(logo_path, width=22 * mm, height=22 * mm) if os.path.exists(logo_path) else ""
+        right_top = Image(naac_path, width=16 * mm, height=16 * mm) if os.path.exists(naac_path) else ""
+        right_bot = Image(inn_path, width=20 * mm, height=10 * mm) if os.path.exists(inn_path) else ""
+        right_cell = Table([[right_top], [Spacer(1, 2 * mm)], [right_bot]], colWidths=[24 * mm])
+        right_cell.setStyle(TableStyle([
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 2),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 2),
-            ("TOPPADDING", (0, 0), (-1, -1), 2),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+            ("LEFTPADDING", (0, 0), (-1, -1), 0),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+            ("TOPPADDING", (0, 0), (-1, -1), 0),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
         ]))
-        story.append(header)
+
+        center_html = """
+        <para align="center">
+        <b><font size="12">ERODE SENGUNTHAR</font></b><br/>
+        <b><font size="10">ENGINEERING COLLEGE</font></b><br/>
+        <font size="7.5">(An Autonomous Institution)</font><br/>
+        <font size="6.5">Approved by AICTE, New Delhi, Permanently Affiliated to Anna University- Chennai,<br/>
+        Accredited by National Board of Accreditation (NBA), New Delhi &amp;<br/>
+        National Assessment and Accreditation Council (NAAC), Bangalore with 'A' Grade</font><br/>
+        <b><font size="7.5">PERUNDURAI – 638 057, TAMILNADU, INDIA.</font></b>
+        </para>
+        """
+        styles = getSampleStyleSheet()
+        center_p = Paragraph(center_html, styles["Normal"])
+
+        c_width = (target_width - 50 * mm) if target_width and target_width > 60 * mm else 132 * mm
+        head_table = Table([[left_logo, center_p, right_cell]], colWidths=[25 * mm, c_width, 25 * mm])
+        head_table.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 0),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+            ("TOPPADDING", (0, 0), (-1, -1), 0),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+        ]))
+        story.append(head_table)
+        story.append(Spacer(1, 4 * mm))
 
     def _add_word_source_header(self, document):
         from docx.enum.text import WD_ALIGN_PARAGRAPH
         from docx.shared import Pt
         from docx.shared import Inches
         from docx.shared import RGBColor
-        from docx.oxml import OxmlElement
-        from docx.oxml.ns import qn
 
-        logos = self._source_logo_images()
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        logo_path = os.path.join(base_dir, "static", "college_logo.png")
+        naac_path = os.path.join(base_dir, "static", "naac_logo.png")
+        inn_path = os.path.join(base_dir, "static", "innovation_logo.png")
+
         table = document.add_table(rows=1, cols=3)
         table.autofit = False
         cells = table.rows[0].cells
-        cells[0].width = Inches(1.0)
-        cells[1].width = Inches(7.0)
-        cells[2].width = Inches(1.0)
-        for cell in cells:
-            shading = OxmlElement("w:shd")
-            shading.set(qn("w:fill"), "282828")
-            cell._tc.get_or_add_tcPr().append(shading)
+        cells[0].width = Inches(1.1)
+        cells[1].width = Inches(5.1)
+        cells[2].width = Inches(1.1)
 
-        if logos:
+        if os.path.exists(logo_path):
             left = cells[0].paragraphs[0]
             left.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            left.add_run().add_picture(logos[0], width=Inches(0.7))
+            left.add_run().add_picture(logo_path, width=Inches(0.9))
+
+        if os.path.exists(naac_path) or os.path.exists(inn_path):
             right = cells[2].paragraphs[0]
             right.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            right.add_run().add_picture(logos[1], width=Inches(0.55))
-            right.add_run().add_break()
-            right.add_run().add_picture(logos[2], width=Inches(0.8))
+            right.paragraph_format.space_after = Pt(2)
+            if os.path.exists(naac_path):
+                right.add_run().add_picture(naac_path, width=Inches(0.65))
+            if os.path.exists(inn_path):
+                p_r2 = cells[2].add_paragraph()
+                p_r2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                p_r2.add_run().add_picture(inn_path, width=Inches(0.85))
 
         center = cells[1].paragraphs[0]
         center.alignment = WD_ALIGN_PARAGRAPH.CENTER
         header_lines = [
-            ("ERODE SENGUNTHAR", 16, True),
-            ("ENGINEERING COLLEGE", 14, True),
-            ("(An Autonomous Institution)", 9, True),
-            ("Approved by AICTE, New Delhi, Permanently Affiliated to "
-             "Anna University - Chennai,", 8, False),
-            ("Accredited by National Board of Accreditation (NBA), New Delhi &",
-             8, False),
-            ("National Assessment and Accreditation Council (NAAC), Bangalore "
-             "with 'A' Grade", 8, False),
-            ("PERUNDURAI - 638 057, TAMILNADU, INDIA.", 10, True),
+            ("ERODE SENGUNTHAR", 13, True),
+            ("ENGINEERING COLLEGE", 11, True),
+            ("(An Autonomous Institution)", 8, False),
+            ("Approved by AICTE, New Delhi, Permanently Affiliated to Anna University- Chennai,", 7, False),
+            ("Accredited by National Board of Accreditation (NBA), New Delhi &", 7, False),
+            ("National Assessment and Accreditation Council (NAAC), Bangalore with 'A' Grade", 7, False),
+            ("PERUNDURAI – 638 057, TAMILNADU, INDIA.", 8, True),
         ]
-        for index, (text, size, bold) in enumerate(header_lines):
-            paragraph = center if index == 0 else cells[1].add_paragraph()
-            paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            run = paragraph.add_run(text)
+        for idx, (text, size, bold) in enumerate(header_lines):
+            p = center if idx == 0 else cells[1].add_paragraph()
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p.paragraph_format.space_before = Pt(0)
+            p.paragraph_format.space_after = Pt(1)
+            run = p.add_run(text)
             run.bold = bold
-            run.font.color.rgb = RGBColor(255, 255, 255)
             run.font.size = Pt(size)
+            run.font.color.rgb = RGBColor(0, 0, 0)
 
     # ============================================================
     #  PDF EXPORT
@@ -1632,7 +2103,6 @@ class ResultAnalyzer:
             fontName="Helvetica-Bold", textColor=colors.white,
         )
         story = []
-        self._add_pdf_source_header(story, sub_style)
 
         stats = self.get_statistics()
 
@@ -1839,42 +2309,68 @@ class ResultAnalyzer:
                     for subject in self.subjects
                 }
             )
+            header_path = os.path.join(
+                os.path.dirname(__file__), "static", "college_header.png"
+            )
+            has_header_img = os.path.isfile(header_path)
+            start_row = 8 if has_header_img else 4
+
             consolidated.to_excel(
                 writer, sheet_name="Consolidated_Marks", index=False,
-                startrow=4
+                startrow=start_row
             )
             worksheet = writer.sheets["Consolidated_Marks"]
             from openpyxl.styles import Font, PatternFill, Alignment
-            branded_fill = PatternFill("solid", fgColor="282828")
-            for row in worksheet.iter_rows(min_row=1, max_row=4,
-                                          min_col=1, max_col=11):
-                for cell in row:
-                    cell.fill = branded_fill
-            worksheet.merge_cells("D1:I4")
-            worksheet["D1"] = (
-                "ERODE SENGUNTHAR\nENGINEERING COLLEGE\n"
-                "(An Autonomous Institution)\n"
-                "Approved by AICTE, New Delhi, Permanently Affiliated to "
-                "Anna University - Chennai,\n"
-                "Accredited by NBA, New Delhi & NAAC, Bangalore with 'A' Grade\n"
-                "PERUNDURAI - 638 057, TAMILNADU, INDIA."
-            )
-            worksheet["D1"].font = Font(name="Arial", bold=True, size=11,
-                                        color="FFFFFF")
-            worksheet["D1"].alignment = Alignment(
-                horizontal="center", vertical="center", wrap_text=True
-            )
-            try:
-                from openpyxl.drawing.image import Image as ExcelImage
-                logo_cells = ("A1", "J1", "J5")
-                for index, stream in enumerate(self._source_logo_images()):
-                    stream.seek(0)
-                    logo = ExcelImage(stream)
-                    logo.width = 70
-                    logo.height = 70
-                    worksheet.add_image(logo, logo_cells[index])
-            except ImportError:
-                pass
+
+            if has_header_img:
+                branded_fill = PatternFill("solid", fgColor="282828")
+                total_cols = max(len(consolidated.columns), 11)
+                for row in worksheet.iter_rows(min_row=1, max_row=7,
+                                              min_col=1, max_col=total_cols):
+                    for cell in row:
+                        cell.fill = branded_fill
+                for r in range(1, 8):
+                    worksheet.row_dimensions[r].height = 22
+
+                try:
+                    from openpyxl.drawing.image import Image as ExcelImage
+                    logo = ExcelImage(header_path)
+                    logo.width = 720
+                    logo.height = int(720 / (953 / 262))
+                    worksheet.add_image(logo, "A1")
+                except Exception:
+                    pass
+            else:
+                branded_fill = PatternFill("solid", fgColor="282828")
+                for row in worksheet.iter_rows(min_row=1, max_row=4,
+                                              min_col=1, max_col=11):
+                    for cell in row:
+                        cell.fill = branded_fill
+                worksheet.merge_cells("D1:I4")
+                worksheet["D1"] = (
+                    "ERODE SENGUNTHAR\nENGINEERING COLLEGE\n"
+                    "(An Autonomous Institution)\n"
+                    "Approved by AICTE, New Delhi, Permanently Affiliated to "
+                    "Anna University - Chennai,\n"
+                    "Accredited by NBA, New Delhi & NAAC, Bangalore with 'A' Grade\n"
+                    "PERUNDURAI - 638 057, TAMILNADU, INDIA."
+                )
+                worksheet["D1"].font = Font(name="Arial", bold=True, size=11,
+                                            color="FFFFFF")
+                worksheet["D1"].alignment = Alignment(
+                    horizontal="center", vertical="center", wrap_text=True
+                )
+                try:
+                    from openpyxl.drawing.image import Image as ExcelImage
+                    logo_cells = ("A1", "J1", "J5")
+                    for index, stream in enumerate(self._source_logo_images()):
+                        stream.seek(0)
+                        logo = ExcelImage(stream)
+                        logo.width = 70
+                        logo.height = 70
+                        worksheet.add_image(logo, logo_cells[index])
+                except ImportError:
+                    pass
             self.get_student_wise_failures().to_excel(
                 writer, sheet_name="Student_Wise_Failures", index=False
             )

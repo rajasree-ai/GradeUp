@@ -216,6 +216,7 @@ def download_counselling_word():
     analyzer = get_analyzer(filepath, pass_mark)
     out_path = analyzer.export_counselling_docx(
         REPORT_FOLDER,
+        department=getattr(current_user, "department", ""),
         class_key=session.get("class_key", ""),
     )
     return send_file(
@@ -259,7 +260,11 @@ def download_student_correction_word():
         return redirect(url_for("index"))
 
     analyzer = get_analyzer(filepath, pass_mark)
-    out_path = analyzer.export_correction_docx(REPORT_FOLDER)
+    out_path = analyzer.export_correction_docx(
+        REPORT_FOLDER,
+        department=getattr(current_user, "department", ""),
+        class_key=session.get("class_key", ""),
+    )
     return send_file(
         out_path,
         as_attachment=True,
