@@ -8,7 +8,6 @@ import shutil
 from io import BytesIO
 from datetime import datetime
 from xml.sax.saxutils import escape
-import pdfplumber
 import pandas as pd
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib import colors
@@ -418,13 +417,22 @@ class ResultAnalyzer:
     # ============================================================
     def _load_pdf(self):
         """Extract student data from a consolidated mark list PDF."""
+        try:
+            import pypdfium2 as pdfium
+        except ImportError as exc:
+            raise ValueError(
+                "PDF support requires pypdfium2 to be installed."
+            ) from exc
+
         all_text = []
-        with pdfplumber.open(self.filepath) as pdf:
-            for page in pdf.pages:
-                # Raw text is enough for vector PDFs; scanned PDFs use OCR below.
-                txt = page.extract_text() or ""
+        with pdfium.PdfDocument(self.filepath) as document:
+            for page_index in range(len(document)):
+                page = document[page_index]
+                text_page = page.get_textpage()
+                txt = text_page.get_text_range() or ""
                 if txt:
                     all_text.append(txt)
+                page.close()
 
         full_text = "\n".join(all_text)
         self.raw_text = full_text
