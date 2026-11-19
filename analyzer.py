@@ -23,6 +23,7 @@ CLASS_SUBJECT_FACULTY = {
         "23MC003": ("Indian Constitution", "Ramesh Babu"),
         "23TPS03": ("Quantitative Aptitude and Logical Reasoning - I",
                     "Tamilselvan P"),
+        "23HS301": ("Professional Communication", ""),
         "23CS301": ("Data Structures", "Saravanan G"),
         "23AD301": ("Artificial Intelligence", "Sathish Kumar P"),
         "23AD302": ("Object Oriented Programming Using Python (Embedded)",
@@ -35,6 +36,7 @@ CLASS_SUBJECT_FACULTY = {
         "23MC003": ("Indian Constitution", "Ramesh Babu"),
         "23TPS03": ("Quantitative Aptitude and Logical Reasoning - I",
                     "Tamilselvan P"),
+        "23HS301": ("Professional Communication", ""),
         "23CS301": ("Data Structures", "Saravanan G"),
         "23AD301": ("Artificial Intelligence", "Sathish Kumar P"),
         "23AD302": ("Object Oriented Programming Using Python (Embedded)",
@@ -47,6 +49,7 @@ CLASS_SUBJECT_FACULTY = {
         "23MC003": ("Indian Constitution", "Ramesh Babu"),
         "23TPS03": ("Quantitative Aptitude and Logical Reasoning - I",
                     "Tamilselvan P"),
+        "23HS301": ("Professional Communication", ""),
         "23CS301": ("Data Structures", "Saravanan G"),
         "23AD301": ("Artificial Intelligence", "Sathish Kumar P"),
         "23AD302": ("Object Oriented Programming Using Python (Embedded)",
@@ -544,27 +547,36 @@ class ResultAnalyzer:
                 bitmap = page.render(scale=3.0)
                 image = bitmap.to_pil()
                 try:
-                    candidates = [
-                        pytesseract.image_to_string(
-                            image.rotate(angle, expand=True)
+                    if page_index == 0:
+                        candidates = [
+                            pytesseract.image_to_string(
+                                image.rotate(angle, expand=True)
+                            )
+                            for angle in (270, 0, 180, 90)
+                        ]
+                        scores = [
+                            (
+                                len(re.findall(r"\bS\.?\s*No\b", text, re.I))
+                                + len(re.findall(r"\bReg\s*No\b", text, re.I))
+                                + len(re.findall(
+                                    r"\b[A-Z]{2}\d{2}[A-Z]{2}\d{2,}\b",
+                                    text,
+                                    re.I,
+                                ))
+                            )
+                            for text in candidates
+                        ]
+                        best_index = max(
+                            range(len(scores)), key=scores.__getitem__
                         )
-                        for angle in (0, 90, 180, 270)
-                    ]
-                    scores = [
-                        (
-                            len(re.findall(r"\bS\.?\s*No\b", text, re.I))
-                            + len(re.findall(r"\bReg\s*No\b", text, re.I))
-                            + len(re.findall(
-                                r"\b[A-Z]{2}\d{2}[A-Z]{2}\d{2,}\b",
-                                text,
-                                re.I,
-                            ))
+                        self._source_rotation = (270, 0, 180, 90)[best_index]
+                        ocr_pages.append(candidates[best_index])
+                    else:
+                        ocr_pages.append(
+                            pytesseract.image_to_string(
+                                image.rotate(self._source_rotation, expand=True)
+                            )
                         )
-                        for text in candidates
-                    ]
-                    best_index = max(range(len(scores)), key=scores.__getitem__)
-                    self._source_rotation = (0, 90, 180, 270)[best_index]
-                    ocr_pages.append(candidates[best_index])
                 except pytesseract.TesseractNotFoundError as exc:
                     raise ValueError(
                         "This PDF is image-only. Install the Tesseract OCR "
