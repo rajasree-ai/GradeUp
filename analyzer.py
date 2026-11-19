@@ -421,16 +421,7 @@ class ResultAnalyzer:
         all_text = []
         with pdfplumber.open(self.filepath) as pdf:
             for page in pdf.pages:
-                # Try structured tables first (won't hurt)
-                try:
-                    for tbl in (page.extract_tables() or []):
-                        for row in tbl:
-                            if row:
-                                cleaned = " ".join(str(c) for c in row if c)
-                                all_text.append(cleaned)
-                except Exception:
-                    pass
-                # Also raw text
+                # Raw text is enough for vector PDFs; scanned PDFs use OCR below.
                 txt = page.extract_text() or ""
                 if txt:
                     all_text.append(txt)
