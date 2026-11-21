@@ -551,7 +551,7 @@ class ResultAnalyzer:
                         pytesseract.image_to_string(
                             rotated,
                             lang="eng",
-                            timeout=30,
+                            timeout=120,
                         )
                     )
                     rotated.close()
