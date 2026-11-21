@@ -546,36 +546,15 @@ class ResultAnalyzer:
                 bitmap = page.render(scale=3.0)
                 image = bitmap.to_pil()
                 try:
-                    if page_index == 0:
-                        candidates = [
-                            pytesseract.image_to_string(
-                                image.rotate(angle, expand=True)
-                            )
-                            for angle in (270, 0, 180, 90)
-                        ]
-                        scores = [
-                            (
-                                len(re.findall(r"\bS\.?\s*No\b", text, re.I))
-                                + len(re.findall(r"\bReg\s*No\b", text, re.I))
-                                + len(re.findall(
-                                    r"\b[A-Z]{2}\d{2}[A-Z]{2}\d{2,}\b",
-                                    text,
-                                    re.I,
-                                ))
-                            )
-                            for text in candidates
-                        ]
-                        best_index = max(
-                            range(len(scores)), key=scores.__getitem__
+                    rotated = image.rotate(270, expand=True)
+                    ocr_pages.append(
+                        pytesseract.image_to_string(
+                            rotated,
+                            lang="eng",
+                            timeout=30,
                         )
-                        self._source_rotation = (270, 0, 180, 90)[best_index]
-                        ocr_pages.append(candidates[best_index])
-                    else:
-                        ocr_pages.append(
-                            pytesseract.image_to_string(
-                                image.rotate(self._source_rotation, expand=True)
-                            )
-                        )
+                    )
+                    rotated.close()
                 except pytesseract.TesseractNotFoundError as exc:
                     raise ValueError(
                         "This PDF is image-only. Install the Tesseract OCR "
