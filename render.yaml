@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: gradeup
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /login
