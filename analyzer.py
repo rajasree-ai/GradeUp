@@ -458,14 +458,26 @@ class ResultAnalyzer:
         # Extract student rows — multiple strategies
         students = self._extract_student_rows(full_text)
         if not students:
-            ocr_text = self._extract_pdf_text_with_ocr()
-            if ocr_text:
-                self.raw_text = f"{full_text}\n{ocr_text}".strip()
-                self.subject_names = []
-                self.pdf_optional_columns = []
-                self._extract_subject_headers(ocr_text)
-                self._extract_subjects_from_summary(ocr_text)
-                students = self._extract_student_rows(ocr_text)
+            students = self._extract_pdf_rows_with_tesseract()
+            if students:
+                ocr_text = self._extract_pdf_text_with_ocr()
+                if ocr_text:
+                    self.raw_text = f"{full_text}\n{ocr_text}".strip()
+                    self.subject_names = []
+                    self.pdf_optional_columns = []
+                    self._extract_subject_headers(ocr_text)
+                    self._extract_subjects_from_summary(ocr_text)
+                    if len(self.subject_names) > 7:
+                        self.subject_names = self.subject_names[:7]
+            else:
+                ocr_text = self._extract_pdf_text_with_ocr()
+                if ocr_text:
+                    self.raw_text = f"{full_text}\n{ocr_text}".strip()
+                    self.subject_names = []
+                    self.pdf_optional_columns = []
+                    self._extract_subject_headers(ocr_text)
+                    self._extract_subjects_from_summary(ocr_text)
+                    students = self._extract_student_rows(ocr_text)
         print(f"=== DETECTED {len(students)} STUDENT ROWS ===\n")
 
         if not students:
@@ -518,6 +530,125 @@ class ResultAnalyzer:
 
         print(f"OK Roll column: {self.roll_col}")
         print(f"OK Subjects: {self.subjects}\n")
+
+    def _extract_pdf_rows_with_tesseract(self):
+        """Extract rotated, image-only mark-list rows from OCR word coordinates."""
+        try:
+            import pypdfium2 as pdfium
+            import pytesseract
+        except ImportError:
+            return []
+
+        if not shutil.which("tesseract"):
+            for candidate in (
+                r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+                r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+            ):
+                if os.path.isfile(candidate):
+                    pytesseract.pytesseract.tesseract_cmd = candidate
+                    break
+
+        def word_is_mark(value):
+            value = str(value).strip().upper()
+            return value in {"AB", "ABSENT", "A", "-"} or re.fullmatch(
+                r"\d{1,3}", value
+            ) is not None
+
+        students = []
+        seen_regnos = set()
+        regno_re = r"[A-Z]{2}\d{2}[A-Z]{2}\d{2,4}"
+
+        with pdfium.PdfDocument(self.filepath) as document:
+            for page_index in range(len(document)):
+                page = document[page_index]
+                bitmap = page.render(scale=4)
+                image = bitmap.to_pil()
+
+                best_result = []
+                best_count = -1
+                for rotation in (270, 90):
+                    rotated = image.rotate(rotation, expand=True)
+                    try:
+                        data = pytesseract.image_to_data(
+                            rotated,
+                            lang="eng",
+                            config="--psm 12",
+                            output_type=pytesseract.Output.DATAFRAME,
+                        )
+                    except pytesseract.TesseractNotFoundError:
+                        rotated.close()
+                        bitmap.close()
+                        page.close()
+                        return []
+
+                    words = data[
+                        data["text"].notna()
+                        & data["text"].astype(str).str.strip().ne("")
+                    ].copy()
+                    registers = words[
+                        words["text"].astype(str).str.fullmatch(
+                            regno_re, case=False, na=False
+                        )
+                    ]
+                    count = len(registers)
+                    if count > best_count:
+                        best_result = words
+                        best_count = count
+                    rotated.close()
+
+                if best_count > 0:
+                    registers = best_result[
+                        best_result["text"].astype(str).str.fullmatch(
+                            regno_re, case=False, na=False
+                        )
+                    ]
+                    for _, reg in registers.iterrows():
+                        regno = str(reg["text"]).strip().upper()
+                        if regno in seen_regnos:
+                            continue
+
+                        top = float(reg["top"])
+                        height = float(reg["height"]) if pd.notna(reg["height"]) else 20
+                        band = best_result[
+                            (best_result["top"] >= top - height * 1.5)
+                            & (best_result["top"] <= top + height * 1.5)
+                        ].sort_values(["left", "top"])
+                        row_words = [
+                            str(v).strip()
+                            for v in band["text"].tolist()
+                            if str(v).strip()
+                        ]
+
+                        if regno not in row_words:
+                            continue
+                        reg_index = row_words.index(regno)
+                        remainder = row_words[reg_index + 1:]
+                        mark_start = len(remainder)
+                        while mark_start > 0 and word_is_mark(remainder[mark_start - 1]):
+                            mark_start -= 1
+                        name_words = remainder[:mark_start]
+                        mark_words = remainder[mark_start:]
+                        cleaned = self._clean_marks(mark_words)
+                        if len(cleaned) > 7:
+                            cleaned = cleaned[:7]
+
+                        if len(cleaned) < 3:
+                            continue
+                        numeric_marks = pd.to_numeric(cleaned, errors="coerce")
+                        total = int(pd.Series(numeric_marks).dropna().sum())
+                        seen_regnos.add(regno)
+                        students.append({
+                            "sno": str(len(students) + 1),
+                            "regno": regno,
+                            "name": " ".join(name_words).strip(),
+                            "marks": cleaned,
+                            "total": total,
+                        })
+
+                bitmap.close()
+                page.close()
+
+        return students
 
     def _extract_pdf_text_with_ocr(self):
         """OCR image-only PDF pages so scanned mark lists can be analyzed."""
