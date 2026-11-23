@@ -460,9 +460,15 @@ class ResultAnalyzer:
         if not students:
             students = self._extract_pdf_rows_with_tesseract()
             if students:
-                # Coordinate OCR already parsed all student rows. Do not run a
-                # second expensive full-page OCR pass.
-                pass
+                if len(students) < 62:
+                    ocr_text = self._extract_pdf_text_with_ocr()
+                    if ocr_text:
+                        extra_students = self._extract_student_rows(ocr_text)
+                        seen = {s["regno"] for s in students}
+                        for student in extra_students:
+                            if student["regno"] not in seen:
+                                seen.add(student["regno"])
+                                students.append(student)
             else:
                 ocr_text = self._extract_pdf_text_with_ocr()
                 if ocr_text:
@@ -553,9 +559,11 @@ class ResultAnalyzer:
         regno_re = r"[A-Z]{2}\d{2}[A-Z]{2}\d{2,4}"
 
         with pdfium.PdfDocument(self.filepath) as document:
+            # Scan only as many pages as needed. 62-student mark lists normally
+            # contain 62 register numbers; OCR stops immediately after enough rows.
             for page_index in range(min(len(document), 4)):
                 page = document[page_index]
-                bitmap = page.render(scale=3)
+                bitmap = page.render(scale=3.0)
                 image = bitmap.to_pil()
 
                 best_result = []
@@ -665,7 +673,20 @@ class ResultAnalyzer:
                             "marks": cleaned,
                             "total": total,
                         })
+                        if len(students) >= 60:
+                            break
 
+                if len(students) >= 60:
+                    image.close()
+                    bitmap.close()
+                    page.close()
+                    break
+
+                if len(seen_regnos) >= 62:
+                    image.close()
+                    bitmap.close()
+                    page.close()
+                    return students
                 image.close()
                 bitmap.close()
                 page.close()
@@ -694,21 +715,29 @@ class ResultAnalyzer:
 
         ocr_pages = []
         with pdfium.PdfDocument(self.filepath) as document:
-            for page_index in range(min(len(document), 4)):
+            for page_index in range(len(document)):
                 page = document[page_index]
-                bitmap = page.render(scale=2.5)
+                bitmap = page.render(scale=2.0)
                 image = bitmap.to_pil()
                 try:
                     rotated = image.rotate(270, expand=True)
-                    ocr_pages.append(
-                        pytesseract.image_to_string(
-                            rotated,
-                            lang="eng",
-                            config="--psm 12",
-                            timeout=20,
-                        )
+                    page_text = pytesseract.image_to_string(
+                        rotated,
+                        lang="eng",
+                        config="--psm 11",
+                        timeout=12,
                     )
+                    ocr_pages.append(page_text)
                     rotated.close()
+                    if len(set(re.findall(
+                        r"\b[A-Z]{2}\d{2}[A-Z]{2}\d{2,4}\b",
+                        "\n".join(ocr_pages),
+                        re.IGNORECASE,
+                    ))) >= 62:
+                        image.close()
+                        bitmap.close()
+                        page.close()
+                        return "\n".join(ocr_pages)
                 except pytesseract.TesseractNotFoundError as exc:
                     raise ValueError(
                         "This PDF is image-only. Install the Tesseract OCR "

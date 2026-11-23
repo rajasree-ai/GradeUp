@@ -5,7 +5,9 @@
     <div class="card" style="max-width: 720px; text-align: center;">
         <div class="step-badge" style="margin: 0 auto 14px;">⏳</div>
         <h2 id="processingTitle">Analyzing your results</h2>
-        <p id="processingMessage">PDF processing continues in the background. Scanned PDFs can take 20–60 seconds. Please keep this page open.</p>
+        <p id="processingMessage">PDF processing continues in the background. Please keep this page open.</p>
+        <p id="elapsedTime" style="color:#64748b; margin-top:8px;">Elapsed: 0 seconds</p>
+        <a id="retryLink" href="{{ url_for('index') }}" class="btn btn-outline" style="display:none; margin-top:12px;">Upload a faster Excel/CSV file</a>
         <div id="processingError" class="flash danger" style="display:none;"></div>
     </div>
 </div>
@@ -13,10 +15,20 @@
 <script>
 const jobId = {{ job_id|tojson }};
 const statusUrl = {{ url_for('analysis_status', job_id=job_id)|tojson }};
+const startedAt = Date.now();
+
+window.setInterval(() => {
+    const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+    document.getElementById("elapsedTime").textContent =
+        "Elapsed: " + elapsed + " seconds";
+}, 1000);
 
 async function checkStatus() {
     try {
         const response = await fetch(statusUrl);
+        if (!response.ok) {
+            throw new Error("Job not found");
+        }
         const result = await response.json();
         if (result.status === "complete") {
             document.getElementById("processingTitle").textContent = "Analysis complete";
@@ -27,6 +39,7 @@ async function checkStatus() {
                 "Error: " + (result.error || "Analysis failed.");
             document.getElementById("processingError").style.display = "block";
             document.getElementById("processingTitle").textContent = "Analysis failed";
+            document.getElementById("retryLink").style.display = "inline-block";
         } else {
             window.setTimeout(checkStatus, 2000);
         }

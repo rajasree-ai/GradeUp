@@ -1,6 +1,9 @@
 import os
 import threading
 import uuid
+import json
+import tempfile
+import time
 from functools import lru_cache
 from flask import (Flask, render_template, request, redirect,
                    url_for, flash, send_file, session, jsonify)
@@ -11,9 +14,17 @@ from analyzer import ResultAnalyzer
 from database import init_db, save_upload, get_history
 from auth import init_auth
 
-UPLOAD_FOLDER = "uploads"
 REPORT_FOLDER = "reports"
 ALLOWED_EXT = {"xlsx", "xls", "csv", "pdf"}
+
+# Shared, OS-temporary storage makes job state visible to every gunicorn worker
+# and preserves it across worker restarts (until the OS temp directory is cleaned).
+TEMP_ROOT = os.environ.get(
+    "GRADEUP_TEMP_DIR",
+    os.path.join(tempfile.gettempdir(), "gradeup"),
+)
+UPLOAD_FOLDER = os.path.join(TEMP_ROOT, "uploads")
+JOB_FOLDER = os.path.join(TEMP_ROOT, "jobs")
 
 app = Flask(__name__)
 app.secret_key = "change-this-secret-key-in-production-12345"
@@ -22,12 +33,41 @@ app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10 MB
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(REPORT_FOLDER, exist_ok=True)
+os.makedirs(JOB_FOLDER, exist_ok=True)
 
 init_db()
 init_auth(app)
 
-analysis_jobs = {}
-analysis_jobs_lock = threading.Lock()
+
+def job_path(job_id):
+    return os.path.join(JOB_FOLDER, f"{job_id}.json")
+
+
+def read_job(job_id):
+    path = job_path(job_id)
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            job = json.load(handle)
+        if job.get("status") in ("queued", "processing"):
+            age = time.time() - float(job.get("updated_at", time.time()))
+            if age > 600:
+                job["status"] = "failed"
+                job["error"] = "Analysis timed out. Please upload the file again."
+                write_job(job_id, job)
+        return job
+    except (FileNotFoundError, json.JSONDecodeError, OSError, ValueError):
+        return None
+
+
+def write_job(job_id, job):
+    path = job_path(job_id)
+    job["updated_at"] = time.time()
+    tmp_path = path + f".{uuid.uuid4().hex}.tmp"
+    with open(tmp_path, "w", encoding="utf-8") as handle:
+        json.dump(job, handle)
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(tmp_path, path)
 
 
 @lru_cache(maxsize=8)
@@ -52,29 +92,29 @@ def allowed_file(fn):
 
 def run_analysis_job(job_id, filepath, pass_mark, class_key, user_id, filename):
     try:
-        with analysis_jobs_lock:
-            analysis_jobs[job_id]["status"] = "processing"
+        job = read_job(job_id) or {}
+        job["status"] = "processing"
+        write_job(job_id, job)
 
         analyzer = get_analyzer(filepath, pass_mark)
         stats = analyzer.get_statistics()
         save_upload(user_id, filename, pass_mark, stats)
 
-        with analysis_jobs_lock:
-            analysis_jobs[job_id].update({
-                "status": "complete",
-                "filepath": filepath,
-                "pass_mark": pass_mark,
-                "class_key": class_key,
-                "stats": stats,
-            })
+        job = read_job(job_id) or job
+        job.update({
+            "status": "complete",
+            "filepath": filepath,
+            "pass_mark": pass_mark,
+            "class_key": class_key,
+            "stats": stats,
+        })
+        write_job(job_id, job)
     except Exception as exc:
         import traceback
         traceback.print_exc()
-        with analysis_jobs_lock:
-            analysis_jobs[job_id].update({
-                "status": "failed",
-                "error": str(exc),
-            })
+        job = read_job(job_id) or {}
+        job.update({"status": "failed", "error": str(exc)})
+        write_job(job_id, job)
 
 
 @app.route("/")
@@ -104,11 +144,10 @@ def upload():
     file.save(filepath)
 
     job_id = uuid.uuid4().hex
-    with analysis_jobs_lock:
-        analysis_jobs[job_id] = {
-            "status": "queued",
-            "user_id": int(current_user.id),
-        }
+    write_job(job_id, {
+        "status": "queued",
+        "user_id": int(current_user.id),
+    })
 
     worker = threading.Thread(
         target=run_analysis_job,
@@ -124,8 +163,7 @@ def upload():
 @app.route("/processing/<job_id>")
 @login_required
 def processing(job_id):
-    with analysis_jobs_lock:
-        job = analysis_jobs.get(job_id)
+    job = read_job(job_id)
     if not job or job["user_id"] != int(current_user.id):
         flash("Analysis job not found.", "danger")
         return redirect(url_for("index"))
@@ -135,11 +173,10 @@ def processing(job_id):
 @app.route("/analysis-status/<job_id>")
 @login_required
 def analysis_status(job_id):
-    with analysis_jobs_lock:
-        job = analysis_jobs.get(job_id)
-        if not job or job["user_id"] != int(current_user.id):
-            return jsonify({"status": "failed", "error": "Job not found."}), 404
-        snapshot = dict(job)
+    job = read_job(job_id)
+    if not job or job["user_id"] != int(current_user.id):
+        return jsonify({"status": "failed", "error": "Job not found."}), 404
+    snapshot = dict(job)
 
     if snapshot["status"] == "complete":
         session["filepath"] = snapshot["filepath"]
