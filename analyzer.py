@@ -561,7 +561,7 @@ class ResultAnalyzer:
         with pdfium.PdfDocument(self.filepath) as document:
             for page_index in range(len(document)):
                 page = document[page_index]
-                bitmap = page.render(scale=4)
+                bitmap = page.render(scale=3)
                 image = bitmap.to_pil()
 
                 best_result = []
@@ -574,12 +574,15 @@ class ResultAnalyzer:
                             lang="eng",
                             config="--psm 12",
                             output_type=pytesseract.Output.DATAFRAME,
+                            timeout=45,
                         )
-                    except pytesseract.TesseractNotFoundError:
+                    except (
+                        pytesseract.TesseractNotFoundError,
+                        pytesseract.TesseractError,
+                        RuntimeError,
+                    ):
                         rotated.close()
-                        bitmap.close()
-                        page.close()
-                        return []
+                        continue
 
                     words = data[
                         data["text"].notna()
@@ -645,6 +648,7 @@ class ResultAnalyzer:
                             "total": total,
                         })
 
+                image.close()
                 bitmap.close()
                 page.close()
 
@@ -674,7 +678,7 @@ class ResultAnalyzer:
         with pdfium.PdfDocument(self.filepath) as document:
             for page_index in range(len(document)):
                 page = document[page_index]
-                bitmap = page.render(scale=3.0)
+                bitmap = page.render(scale=2.5)
                 image = bitmap.to_pil()
                 try:
                     rotated = image.rotate(270, expand=True)
@@ -682,7 +686,8 @@ class ResultAnalyzer:
                         pytesseract.image_to_string(
                             rotated,
                             lang="eng",
-                            timeout=120,
+                            config="--psm 12",
+                            timeout=45,
                         )
                     )
                     rotated.close()
@@ -691,6 +696,10 @@ class ResultAnalyzer:
                         "This PDF is image-only. Install the Tesseract OCR "
                         "engine before uploading scanned PDFs."
                     ) from exc
+                except (pytesseract.TesseractError, RuntimeError):
+                    ocr_pages.append("")
+                finally:
+                    image.close()
                 bitmap.close()
                 page.close()
         return "\n".join(ocr_pages)
