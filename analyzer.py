@@ -558,7 +558,7 @@ class ResultAnalyzer:
 
                 best_result = []
                 best_count = -1
-                for rotation in (270,):
+                for rotation in (0,):
                     rotated = image.rotate(rotation, expand=True)
                     try:
                         width, height = rotated.size
