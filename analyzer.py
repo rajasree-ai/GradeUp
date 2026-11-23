@@ -566,7 +566,7 @@ class ResultAnalyzer:
                         data = pytesseract.image_to_data(
                             rotated,
                             lang="eng",
-                            config="--psm 12",
+                            config="--psm 11",
                             output_type=pytesseract.Output.DATAFRAME,
                             timeout=20,
                         )
