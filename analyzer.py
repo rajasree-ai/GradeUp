@@ -460,15 +460,9 @@ class ResultAnalyzer:
         if not students:
             students = self._extract_pdf_rows_with_tesseract()
             if students:
-                ocr_text = self._extract_pdf_text_with_ocr()
-                if ocr_text:
-                    self.raw_text = f"{full_text}\n{ocr_text}".strip()
-                    self.subject_names = []
-                    self.pdf_optional_columns = []
-                    self._extract_subject_headers(ocr_text)
-                    self._extract_subjects_from_summary(ocr_text)
-                    if len(self.subject_names) > 7:
-                        self.subject_names = self.subject_names[:7]
+                # Coordinate OCR already parsed all student rows. Do not run a
+                # second expensive full-page OCR pass.
+                pass
             else:
                 ocr_text = self._extract_pdf_text_with_ocr()
                 if ocr_text:
@@ -559,14 +553,14 @@ class ResultAnalyzer:
         regno_re = r"[A-Z]{2}\d{2}[A-Z]{2}\d{2,4}"
 
         with pdfium.PdfDocument(self.filepath) as document:
-            for page_index in range(len(document)):
+            for page_index in range(min(len(document), 4)):
                 page = document[page_index]
                 bitmap = page.render(scale=3)
                 image = bitmap.to_pil()
 
                 best_result = []
                 best_count = -1
-                for rotation in (270, 90):
+                for rotation in (270,):
                     rotated = image.rotate(rotation, expand=True)
                     try:
                         data = pytesseract.image_to_data(
@@ -574,7 +568,7 @@ class ResultAnalyzer:
                             lang="eng",
                             config="--psm 12",
                             output_type=pytesseract.Output.DATAFRAME,
-                            timeout=45,
+                            timeout=20,
                         )
                     except (
                         pytesseract.TesseractNotFoundError,
@@ -588,6 +582,21 @@ class ResultAnalyzer:
                         data["text"].notna()
                         & data["text"].astype(str).str.strip().ne("")
                     ].copy()
+                    ocr_words = " ".join(words["text"].astype(str).tolist())
+                    detected_codes = list(dict.fromkeys(
+                        code.upper()
+                        for code in re.findall(
+                            r"\b\d{2}[A-Z]{2,4}\d{2,3}\b",
+                            ocr_words,
+                            re.IGNORECASE,
+                        )
+                    ))
+                    if detected_codes:
+                        for code in detected_codes:
+                            if code not in self.subject_names:
+                                self.subject_names.append(code)
+                        if len(self.subject_names) > 7:
+                            self.subject_names = self.subject_names[:7]
                     registers = words[
                         words["text"].astype(str).str.fullmatch(
                             regno_re, case=False, na=False
@@ -676,7 +685,7 @@ class ResultAnalyzer:
 
         ocr_pages = []
         with pdfium.PdfDocument(self.filepath) as document:
-            for page_index in range(len(document)):
+            for page_index in range(min(len(document), 4)):
                 page = document[page_index]
                 bitmap = page.render(scale=2.5)
                 image = bitmap.to_pil()
@@ -687,7 +696,7 @@ class ResultAnalyzer:
                             rotated,
                             lang="eng",
                             config="--psm 12",
-                            timeout=45,
+                            timeout=20,
                         )
                     )
                     rotated.close()
