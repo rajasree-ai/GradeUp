@@ -563,8 +563,15 @@ class ResultAnalyzer:
                 for rotation in (270,):
                     rotated = image.rotate(rotation, expand=True)
                     try:
+                        width, height = rotated.size
+                        table_region = rotated.crop((
+                            0,
+                            int(height * 0.20),
+                            width,
+                            int(height * 0.96),
+                        ))
                         data = pytesseract.image_to_data(
-                            rotated,
+                            table_region,
                             lang="eng",
                             config="--psm 11",
                             output_type=pytesseract.Output.DATAFRAME,
@@ -575,8 +582,10 @@ class ResultAnalyzer:
                         pytesseract.TesseractError,
                         RuntimeError,
                     ):
+                        table_region.close()
                         rotated.close()
                         continue
+                    table_region.close()
 
                     words = data[
                         data["text"].notna()
