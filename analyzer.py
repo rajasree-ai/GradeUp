@@ -459,17 +459,7 @@ class ResultAnalyzer:
         students = self._extract_student_rows(full_text)
         if not students:
             students = self._extract_pdf_rows_with_tesseract()
-            if students:
-                if len(students) < 62:
-                    ocr_text = self._extract_pdf_text_with_ocr()
-                    if ocr_text:
-                        extra_students = self._extract_student_rows(ocr_text)
-                        seen = {s["regno"] for s in students}
-                        for student in extra_students:
-                            if student["regno"] not in seen:
-                                seen.add(student["regno"])
-                                students.append(student)
-            else:
+            if not students:
                 ocr_text = self._extract_pdf_text_with_ocr()
                 if ocr_text:
                     self.raw_text = f"{full_text}\n{ocr_text}".strip()
@@ -673,15 +663,6 @@ class ResultAnalyzer:
                             "marks": cleaned,
                             "total": total,
                         })
-                        if len(students) >= 60:
-                            break
-
-                if len(students) >= 60:
-                    image.close()
-                    bitmap.close()
-                    page.close()
-                    break
-
                 if len(seen_regnos) >= 62:
                     image.close()
                     bitmap.close()
