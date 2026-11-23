@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Processing — GradeUp{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="card" style="max-width: 720px; text-align: center;">
+        <div class="step-badge" style="margin: 0 auto 14px;">⏳</div>
+        <h2 id="processingTitle">Analyzing your results</h2>
+        <p id="processingMessage">PDF/OCR processing continues in the background. Please keep this page open.</p>
+        <div id="processingError" class="flash danger" style="display:none;"></div>
+    </div>
+</div>
+
+<script>
+const jobId = {{ job_id|tojson }};
+const statusUrl = {{ url_for('analysis_status', job_id=job_id)|tojson }};
+
+async function checkStatus() {
+    try {
+        const response = await fetch(statusUrl);
+        const result = await response.json();
+        if (result.status === "complete") {
+            document.getElementById("processingTitle").textContent = "Analysis complete";
+            document.getElementById("processingMessage").textContent = "Opening your dashboard...";
+            window.location.href = {{ url_for('dashboard')|tojson }};
+        } else if (result.status === "failed") {
+            document.getElementById("processingError").textContent =
+                "Error: " + (result.error || "Analysis failed.");
+            document.getElementById("processingError").style.display = "block";
+            document.getElementById("processingTitle").textContent = "Analysis failed";
+        } else {
+            window.setTimeout(checkStatus, 2000);
+        }
+    } catch (error) {
+        window.setTimeout(checkStatus, 3000);
+    }
+}
+
+checkStatus();
+</script>
+{% endblock %}

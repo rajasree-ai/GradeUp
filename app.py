@@ -1,7 +1,9 @@
 import os
+import threading
+import uuid
 from functools import lru_cache
 from flask import (Flask, render_template, request, redirect,
-                   url_for, flash, send_file, session)
+                   url_for, flash, send_file, session, jsonify)
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 
@@ -24,6 +26,9 @@ os.makedirs(REPORT_FOLDER, exist_ok=True)
 init_db()
 init_auth(app)
 
+analysis_jobs = {}
+analysis_jobs_lock = threading.Lock()
+
 
 @lru_cache(maxsize=8)
 def _get_analyzer(filepath, pass_mark, modified_ns, file_size):
@@ -43,6 +48,33 @@ def get_analyzer(filepath, pass_mark):
 
 def allowed_file(fn):
     return "." in fn and fn.rsplit(".", 1)[1].lower() in ALLOWED_EXT
+
+
+def run_analysis_job(job_id, filepath, pass_mark, class_key, user_id, filename):
+    try:
+        with analysis_jobs_lock:
+            analysis_jobs[job_id]["status"] = "processing"
+
+        analyzer = get_analyzer(filepath, pass_mark)
+        stats = analyzer.get_statistics()
+        save_upload(user_id, filename, pass_mark, stats)
+
+        with analysis_jobs_lock:
+            analysis_jobs[job_id].update({
+                "status": "complete",
+                "filepath": filepath,
+                "pass_mark": pass_mark,
+                "class_key": class_key,
+                "stats": stats,
+            })
+    except Exception as exc:
+        import traceback
+        traceback.print_exc()
+        with analysis_jobs_lock:
+            analysis_jobs[job_id].update({
+                "status": "failed",
+                "error": str(exc),
+            })
 
 
 @app.route("/")
@@ -71,27 +103,58 @@ def upload():
     filepath = os.path.join(app.config["UPLOAD_FOLDER"], user_filename)
     file.save(filepath)
 
-    try:
-        analyzer = get_analyzer(filepath, pass_mark)
-        stats = analyzer.get_statistics()
+    job_id = uuid.uuid4().hex
+    with analysis_jobs_lock:
+        analysis_jobs[job_id] = {
+            "status": "queued",
+            "user_id": int(current_user.id),
+        }
 
-        session["filepath"] = filepath
-        session["pass_mark"] = pass_mark
-        session["class_key"] = class_key
+    worker = threading.Thread(
+        target=run_analysis_job,
+        args=(job_id, filepath, pass_mark, class_key,
+              int(current_user.id), filename),
+        daemon=True,
+        name=f"gradeup-analysis-{job_id[:8]}",
+    )
+    worker.start()
+    return redirect(url_for("processing", job_id=job_id))
+
+
+@app.route("/processing/<job_id>")
+@login_required
+def processing(job_id):
+    with analysis_jobs_lock:
+        job = analysis_jobs.get(job_id)
+    if not job or job["user_id"] != int(current_user.id):
+        flash("Analysis job not found.", "danger")
+        return redirect(url_for("index"))
+    return render_template("processing.html", job_id=job_id)
+
+
+@app.route("/analysis-status/<job_id>")
+@login_required
+def analysis_status(job_id):
+    with analysis_jobs_lock:
+        job = analysis_jobs.get(job_id)
+        if not job or job["user_id"] != int(current_user.id):
+            return jsonify({"status": "failed", "error": "Job not found."}), 404
+        snapshot = dict(job)
+
+    if snapshot["status"] == "complete":
+        session["filepath"] = snapshot["filepath"]
+        session["pass_mark"] = snapshot["pass_mark"]
+        session["class_key"] = snapshot["class_key"]
         for key in (
             "college_name", "class_info", "academic_year", "branch",
             "year_semester", "exam_details",
         ):
             session.pop(key, None)
 
-        save_upload(current_user.id, filename, pass_mark, stats)
-        return redirect(url_for("dashboard"))
-
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        flash(f"Error: {e}", "danger")
-        return redirect(url_for("index"))
+    return jsonify({
+        "status": snapshot["status"],
+        "error": snapshot.get("error", ""),
+    })
 
 
 @app.route("/dashboard")
